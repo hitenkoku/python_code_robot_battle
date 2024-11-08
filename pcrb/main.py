@@ -1,92 +1,186 @@
-import random
+import json
 
 
 class Robot:
-    def __init__(self, name, x, y):
-        self.name = name
-        self.x = x
-        self.y = y
-        self.hp = 100
-        self.sp = 50  # スタミナポイント（SP）の初期値
-        self.attack_power = 20
-        self.move_cost = 5  # 移動時のスタミナ消費量
-        self.attack_cost = 10  # 攻撃時のスタミナ消費量
-        self.evade_recovery = 15  # 回避時のスタミナ回復量
+    def __init__(self, name, x, y, robot_logic, controller):
+        self._name = name
+        self._x = x
+        self._y = y
+        self._hp = 100
+        self._sp = 50
+        self._attack_power = 20
+        self._move_cost = 5
+        self._attack_cost = 10
+        self._evade_recovery = 15
+        self.robot_logic = robot_logic
+        self.controller = controller
 
-    def move(self, dx, dy):
-        if self.sp >= self.move_cost:  # スタミナが足りるかチェック
-            if abs(dx) <= 1 and abs(dy) <= 1 and (dx == 0 or dy == 0):
-                self.x += dx
-                self.y += dy
-                self.sp -= self.move_cost  # スタミナを消費
-                print(f"{self.name} moved to ({self.x}, {self.y}) and used {self.move_cost} SP. Remaining SP: {self.sp}")
-            else:
-                print(f"{self.name} tried to move to an invalid location.")
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def hp(self):
+        return self._hp
+
+    @property
+    def sp(self):
+        return self._sp
+
+    @property
+    def position(self):
+        return self._x, self._y
+
+    def move(self, direction, turn):
+        if self._sp < self._move_cost:
+            self.controller.log_action(turn, f"{self._name} does not have enough SP to move!")
+            return
+
+        # 移動先の座標を計算
+        if direction == "up":
+            new_x, new_y = self._x, self._y - 1
+        elif direction == "down":
+            new_x, new_y = self._x, self._y + 1
+        elif direction == "left":
+            new_x, new_y = self._x - 1, self._y
+        elif direction == "right":
+            new_x, new_y = self._x + 1, self._y
         else:
-            print(f"{self.name} does not have enough SP to move!")
+            self.controller.log_action(turn, f"{self._name} tried to move in an invalid direction.")
+            return
 
-    def attack(self, target_x, target_y, other_robot):
-        if self.sp >= self.attack_cost:  # スタミナが足りるかチェック
-            if abs(self.x - target_x) + abs(self.y - target_y) == 1:
-                if other_robot.x == target_x and other_robot.y == target_y:
-                    damage = self.attack_power + random.randint(-5, 5)
-                    other_robot.hp -= damage
-                    self.sp -= self.attack_cost  # スタミナを消費
-                    print(f"{self.name} attacks {other_robot.name} at ({target_x}, {target_y}) for {damage} damage and used {self.attack_cost} SP.")
-                    print(f"{other_robot.name}'s HP is now {other_robot.hp}. Remaining SP: {self.sp}")
-                else:
-                    print(f"{self.name} attacks empty space at ({target_x}, {target_y}) and misses!")
-            else:
-                print(f"{self.name} tried to attack a non-adjacent location at ({target_x}, {target_y}).")
+        # 移動先に他のロボットがいないかチェック
+        if self.controller.is_position_occupied(new_x, new_y):
+            self.controller.log_action(turn, f"{self._name} tried to move to ({new_x}, {new_y}), but the path is blocked.")
         else:
-            print(f"{self.name} does not have enough SP to attack!")
+            self._x, self._y = new_x, new_y
+            self._sp -= self._move_cost
+            self.controller.log_action(turn, f"{self._name} moved {direction} to ({self._x}, {self._y}), HP: {self._hp}, SP: {self._sp}")
 
-    def evade(self):
-        self.sp += self.evade_recovery  # スタミナを回復
-        print(f"{self.name} evades and recovers {self.evade_recovery} SP. Total SP: {self.sp}")
+    def attack(self, other_robot, turn):
+        if self._sp >= self._attack_cost:
+            if abs(self._x - other_robot._x) + abs(self._y - other_robot._y) == 1:
+                damage = self._attack_power
+                other_robot._hp -= damage
+                self._sp -= self._attack_cost
+                self.controller.log_action(turn, f"{self._name} attacks {other_robot.name} at ({other_robot._x}, {other_robot._y}) for {damage} damage.")
+            else:
+                self.controller.log_action(turn, f"{self._name} tried to attack a non-adjacent location.")
+        else:
+            self.controller.log_action(turn, f"{self._name} does not have enough SP to attack!")
+
+    def evade(self, turn):
+        self._sp += self._evade_recovery
+        self.controller.log_action(turn, f"{self._name} evades and recovers {self._evade_recovery} SP. Total SP: {self._sp}")
 
     def is_alive(self):
-        return self.hp > 0
+        return self._hp > 0
 
 
-def player_robot_logic(robot, enemy):
-    # サンプルロジック：スタミナが少なければ回避、それ以外は敵に近づいて攻撃
+class GameController:
+    def __init__(self, max_turn=100):
+        self.robot1 = None
+        self.robot2 = None
+        self.turn = 0
+        self.max_turn = max_turn
+        self.log_file = open("game_log.txt", "w")
+        self.game_state_file = open("game_state.json", "w")  # JSONファイルの準備
+        self.game_state = []  # ゲーム状態のリスト
+
+    def set_robots(self, robot1, robot2):
+        self.robot1 = robot1
+        self.robot2 = robot2
+
+    def log_action(self, turn, message):
+        print(message)
+        self.log_file.write(f"Turn {turn}: {message}\n")
+
+    def is_position_occupied(self, x, y):
+        return self.robot1.position == (x, y) or self.robot2.position == (x, y)
+
+    def run_logic(self, robot):
+        enemy = self.robot2 if robot == self.robot1 else self.robot1
+        enemy_position = enemy.position
+
+        game_ifo = {'enemy_position': enemy_position}
+        action = robot.robot_logic(robot, game_ifo)
+
+        if action == "evade":
+            robot.evade(self.turn)
+        elif action == "attack":
+            robot.attack(enemy, self.turn)
+        elif action in ["up", "down", "left", "right"]:
+            robot.move(action, self.turn)
+
+        return action
+
+    def save_game_state(self, robot_name, action):
+        # 現在のターンのゲーム状態を辞書形式で記録
+        state = {
+            "turn": self.turn,
+            "robots": [
+                {
+                    "name": self.robot1.name,
+                    "position": self.robot1.position,
+                    "hp": self.robot1.hp,
+                    "sp": self.robot1.sp,
+                },
+                {
+                    "name": self.robot2.name,
+                    "position": self.robot2.position,
+                    "hp": self.robot2.hp,
+                    "sp": self.robot2.sp,
+                }
+            ],
+            'action': {
+                'robot_name': robot_name,
+                'action': action
+            }
+        }
+        self.game_state.append(state)
+
+    def game_loop(self):
+        while self.robot1.is_alive() and self.robot2.is_alive() and self.turn < self.max_turn:
+            current_robot = self.robot1 if self.turn % 2 == 0 else self.robot2
+            self.log_action(self.turn, f"\n--- Turn {self.turn} : {current_robot.name} turn ---")
+            action = self.run_logic(current_robot)
+            self.save_game_state(current_robot.name, action)  # 各ターンごとの状態を保存
+            self.log_action(self.turn, f" - {self.robot1.name} : HP: {self.robot1._hp}, SP: {self.robot1._sp}")
+            self.log_action(self.turn, f" - {self.robot2.name} : HP: {self.robot2._hp}, SP: {self.robot2._sp}")
+            self.turn += 1
+
+        winner = self.robot1 if self.robot1.hp > self.robot2.hp else self.robot2
+        self.log_action(self.turn, f"\n{winner.name} wins!")
+        self.log_file.close()
+
+        json.dump(self.game_state, self.game_state_file, indent=4)
+        self.game_state_file.close()
+
+
+def robot_logic(robot, game_ifo):
+    # スタミナが少ない場合は回避、それ以外は敵に近づいて攻撃
+    enemy_position = game_ifo['enemy_position']
     if robot.sp < 20:
-        robot.evade()
-    elif abs(robot.x - enemy.x) + abs(robot.y - enemy.y) == 1:
-        robot.attack(enemy.x, enemy.y, enemy)
+        return "evade"
+    elif abs(robot.position[0] - enemy_position[0]) + abs(robot.position[1] - enemy_position[1]) == 1:
+        return "attack"
     else:
-        if robot.x < enemy.x:
-            robot.move(1, 0)
-        elif robot.x > enemy.x:
-            robot.move(-1, 0)
-        elif robot.y < enemy.y:
-            robot.move(0, 1)
-        elif robot.y > enemy.y:
-            robot.move(0, -1)
-
-
-def game_loop(robot1, robot2):
-    turn = 0
-    while robot1.is_alive() and robot2.is_alive():
-        print(f"\n--- Turn {turn} ---")
-        if turn % 2 == 0:
-            player_robot_logic(robot1, robot2)
+        if robot.position[0] < enemy_position[0]:
+            return "right"
+        elif robot.position[0] > enemy_position[0]:
+            return "left"
+        elif robot.position[1] < enemy_position[1]:
+            return "down"
         else:
-            player_robot_logic(robot2, robot1)
-        turn += 1
-    if robot1.is_alive():
-        print(f"\n{robot1.name} wins!")
-    else:
-        print(f"\n{robot2.name} wins!")
+            return "up"
 
 
 def main():
-    # ロボットの初期化
-    robot1 = Robot("Robot A", 0, 0)
-    robot2 = Robot("Robot B", 3, 3)
-    # ゲームの開始
-    game_loop(robot1, robot2)
+    controller = GameController()
+    robot1 = Robot("Robot A", 0, 0, robot_logic, controller)
+    robot2 = Robot("Robot B", 3, 3, robot_logic, controller)
+    controller.set_robots(robot1, robot2)
+    controller.game_loop()
 
 
 if __name__ == "__main__":
