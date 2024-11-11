@@ -38,24 +38,26 @@ class Robot:
 
         # 移動先の座標を計算
         if direction == "up":
-            new_x, new_y = self._x, self._y - 1
+            new_x, new_y = self._x, max(0, self._y - 1)
         elif direction == "down":
-            new_x, new_y = self._x, self._y + 1
+            new_x, new_y = self._x, min(self.controller.y_max, self._y + 1)
         elif direction == "left":
-            new_x, new_y = self._x - 1, self._y
+            new_x, new_y = max(0, self._x - 1), self._y
         elif direction == "right":
-            new_x, new_y = self._x + 1, self._y
+            new_x, new_y = min(self.controller.x_max, self._x + 1), self._y
         else:
             self.controller.log_action(turn, f"{self._name} tried to move in an invalid direction.")
             return
 
         # 移動先に他のロボットがいないかチェック
         if self.controller.is_position_occupied(new_x, new_y):
-            self.controller.log_action(turn, f"{self._name} tried to move to ({new_x}, {new_y}), but the path is blocked.")
+            self.controller.log_action(
+                turn, f"{self._name} tried to move to ({new_x}, {new_y}), but the path is blocked.")
         else:
             self._x, self._y = new_x, new_y
             self._sp -= self._move_cost
-            self.controller.log_action(turn, f"{self._name} moved {direction} to ({self._x}, {self._y}), HP: {self._hp}, SP: {self._sp}")
+            self.controller.log_action(
+                turn, f"{self._name} moved {direction} to ({self._x}, {self._y}), HP: {self._hp}, SP: {self._sp}")
 
     def attack(self, other_robot, turn):
         if self._sp >= self._attack_cost:
@@ -78,14 +80,23 @@ class Robot:
 
 
 class GameController:
-    def __init__(self, max_turn=100):
+    def __init__(self, max_turn=100, x_max=9, y_max=9):
         self.robot1 = None
         self.robot2 = None
         self.turn = 0
         self.max_turn = max_turn
+        self.x_max = x_max
+        self.y_max = y_max
         self.log_file = open("game_log.txt", "w")
-        self.game_state_file = open("game_state.json", "w")  # JSONファイルの準備
-        self.game_state = []  # ゲーム状態のリスト
+        self.game_state_file = open("game_state.json", "w")
+
+        self.game_state = [{
+            'settings': {
+                'max_turn': self.max_turn,
+                'x_max': self.x_max,
+                'y_max': self.y_max,
+            }
+        }]
 
     def set_robots(self, robot1, robot2):
         self.robot1 = robot1
@@ -176,9 +187,9 @@ def robot_logic(robot, game_ifo):
 
 
 def main():
-    controller = GameController()
-    robot1 = Robot("Robot A", 0, 0, robot_logic, controller)
-    robot2 = Robot("Robot B", 3, 3, robot_logic, controller)
+    controller = GameController(max_turn=100, x_max=9, y_max=7)
+    robot1 = Robot("Robot A", 1, 3, robot_logic, controller)
+    robot2 = Robot("Robot B", 7, 3, robot_logic, controller)
     controller.set_robots(robot1, robot2)
     controller.game_loop()
 
