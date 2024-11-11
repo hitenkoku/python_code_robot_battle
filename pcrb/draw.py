@@ -4,7 +4,7 @@ import numpy as np
 
 
 # 各ターンの盤面を描画する関数
-def draw_board(turn_data, x_max, y_max, title=''):
+def draw_board(turn_data, x_max, y_max, title='', is_show=True):
     # 盤面の初期化（0: 空, 1: Robot A, 2: Robot B）
     board = np.zeros((y_max, x_max))
 
@@ -66,7 +66,10 @@ def draw_board(turn_data, x_max, y_max, title=''):
 
     if title:
         plt.title(title)
-    plt.show()
+
+    if is_show:
+        plt.show()
+    return plt
 
 
 def main():
