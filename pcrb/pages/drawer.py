@@ -12,7 +12,8 @@ def main():
 
     uploaded_holder = st.empty()
     title_holder = st.empty()
-    turn_holder = st.empty()
+    turn_slider_holder = st.empty()
+    turn_button_holder = st.empty()
     board_holder = st.empty()
     robots_holder = st.empty()
     memo_holder = st.empty()
@@ -31,7 +32,29 @@ def main():
 
         all_turn_data = data[1:]
 
-        turn_id = turn_holder.slider("TURN", 0, all_turn_data[-1]['turn'])
+        # Initialize session state for the current turn
+        if 'current_turn' not in st.session_state:
+            st.session_state.current_turn = 0
+
+        # Slider for selecting turn
+        turn_id = turn_slider_holder.slider("TURN", 0, all_turn_data[-1]['turn'], st.session_state.current_turn)
+        st.session_state.current_turn = turn_id
+
+        # Next and Back buttons
+        col1, col2, _ = turn_button_holder.columns([1, 1, 2])
+        with col1:
+            if st.button("Back"):
+                if st.session_state.current_turn > 0:
+                    st.session_state.current_turn -= 1
+
+        with col2:
+            if st.button("Next"):
+                if st.session_state.current_turn < all_turn_data[-1]['turn']:
+                    st.session_state.current_turn += 1
+
+        # Sync slider with button actions
+        turn_id = st.session_state.current_turn
+
         turn_data = all_turn_data[turn_id]
 
         _action = turn_data['action']
@@ -46,5 +69,5 @@ def main():
         board_holder.pyplot(plt)
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     main()
