@@ -1,0 +1,495 @@
+[
+    {
+        "settings": {
+            "max_turn": 100,
+            "x_max": 9,
+            "y_max": 7
+        }
+    },
+    {
+        "turn": 0,
+        "robots": [
+            {
+                "name": "Robot A",
+                "position": [
+                    2,
+                    3
+                ],
+                "hp": 100,
+                "sp": 45
+            },
+            {
+                "name": "Robot B",
+                "position": [
+                    7,
+                    3
+                ],
+                "hp": 100,
+                "sp": 50
+            }
+        ],
+        "action": {
+            "robot_name": "Robot A",
+            "action": "right"
+        }
+    },
+    {
+        "turn": 1,
+        "robots": [
+            {
+                "name": "Robot A",
+                "position": [
+                    2,
+                    3
+                ],
+                "hp": 100,
+                "sp": 45
+            },
+            {
+                "name": "Robot B",
+                "position": [
+                    6,
+                    3
+                ],
+                "hp": 100,
+                "sp": 45
+            }
+        ],
+        "action": {
+            "robot_name": "Robot B",
+            "action": "left"
+        }
+    },
+    {
+        "turn": 2,
+        "robots": [
+            {
+                "name": "Robot A",
+                "position": [
+                    3,
+                    3
+                ],
+                "hp": 100,
+                "sp": 40
+            },
+            {
+                "name": "Robot B",
+                "position": [
+                    6,
+                    3
+                ],
+                "hp": 100,
+                "sp": 45
+            }
+        ],
+        "action": {
+            "robot_name": "Robot A",
+            "action": "right"
+        }
+    },
+    {
+        "turn": 3,
+        "robots": [
+            {
+                "name": "Robot A",
+                "position": [
+                    3,
+                    3
+                ],
+                "hp": 100,
+                "sp": 40
+            },
+            {
+                "name": "Robot B",
+                "position": [
+                    5,
+                    3
+                ],
+                "hp": 100,
+                "sp": 40
+            }
+        ],
+        "action": {
+            "robot_name": "Robot B",
+            "action": "left"
+        }
+    },
+    {
+        "turn": 4,
+        "robots": [
+            {
+                "name": "Robot A",
+                "position": [
+                    4,
+                    3
+                ],
+                "hp": 100,
+                "sp": 35
+            },
+            {
+                "name": "Robot B",
+                "position": [
+                    5,
+                    3
+                ],
+                "hp": 100,
+                "sp": 40
+            }
+        ],
+        "action": {
+            "robot_name": "Robot A",
+            "action": "right"
+        }
+    },
+    {
+        "turn": 5,
+        "robots": [
+            {
+                "name": "Robot A",
+                "position": [
+                    4,
+                    3
+                ],
+                "hp": 80,
+                "sp": 35
+            },
+            {
+                "name": "Robot B",
+                "position": [
+                    5,
+                    3
+                ],
+                "hp": 100,
+                "sp": 30
+            }
+        ],
+        "action": {
+            "robot_name": "Robot B",
+            "action": "attack"
+        }
+    },
+    {
+        "turn": 6,
+        "robots": [
+            {
+                "name": "Robot A",
+                "position": [
+                    4,
+                    3
+                ],
+                "hp": 80,
+                "sp": 25
+            },
+            {
+                "name": "Robot B",
+                "position": [
+                    5,
+                    3
+                ],
+                "hp": 80,
+                "sp": 30
+            }
+        ],
+        "action": {
+            "robot_name": "Robot A",
+            "action": "attack"
+        }
+    },
+    {
+        "turn": 7,
+        "robots": [
+            {
+                "name": "Robot A",
+                "position": [
+                    4,
+                    3
+                ],
+                "hp": 60,
+                "sp": 25
+            },
+            {
+                "name": "Robot B",
+                "position": [
+                    5,
+                    3
+                ],
+                "hp": 80,
+                "sp": 20
+            }
+        ],
+        "action": {
+            "robot_name": "Robot B",
+            "action": "attack"
+        }
+    },
+    {
+        "turn": 8,
+        "robots": [
+            {
+                "name": "Robot A",
+                "position": [
+                    4,
+                    3
+                ],
+                "hp": 60,
+                "sp": 15
+            },
+            {
+                "name": "Robot B",
+                "position": [
+                    5,
+                    3
+                ],
+                "hp": 60,
+                "sp": 20
+            }
+        ],
+        "action": {
+            "robot_name": "Robot A",
+            "action": "attack"
+        }
+    },
+    {
+        "turn": 9,
+        "robots": [
+            {
+                "name": "Robot A",
+                "position": [
+                    4,
+                    3
+                ],
+                "hp": 40,
+                "sp": 15
+            },
+            {
+                "name": "Robot B",
+                "position": [
+                    5,
+                    3
+                ],
+                "hp": 60,
+                "sp": 10
+            }
+        ],
+        "action": {
+            "robot_name": "Robot B",
+            "action": "attack"
+        }
+    },
+    {
+        "turn": 10,
+        "robots": [
+            {
+                "name": "Robot A",
+                "position": [
+                    4,
+                    3
+                ],
+                "hp": 40,
+                "sp": 30
+            },
+            {
+                "name": "Robot B",
+                "position": [
+                    5,
+                    3
+                ],
+                "hp": 60,
+                "sp": 10
+            }
+        ],
+        "action": {
+            "robot_name": "Robot A",
+            "action": "evade"
+        }
+    },
+    {
+        "turn": 11,
+        "robots": [
+            {
+                "name": "Robot A",
+                "position": [
+                    4,
+                    3
+                ],
+                "hp": 40,
+                "sp": 30
+            },
+            {
+                "name": "Robot B",
+                "position": [
+                    5,
+                    3
+                ],
+                "hp": 60,
+                "sp": 25
+            }
+        ],
+        "action": {
+            "robot_name": "Robot B",
+            "action": "evade"
+        }
+    },
+    {
+        "turn": 12,
+        "robots": [
+            {
+                "name": "Robot A",
+                "position": [
+                    4,
+                    3
+                ],
+                "hp": 40,
+                "sp": 20
+            },
+            {
+                "name": "Robot B",
+                "position": [
+                    5,
+                    3
+                ],
+                "hp": 40,
+                "sp": 25
+            }
+        ],
+        "action": {
+            "robot_name": "Robot A",
+            "action": "attack"
+        }
+    },
+    {
+        "turn": 13,
+        "robots": [
+            {
+                "name": "Robot A",
+                "position": [
+                    4,
+                    3
+                ],
+                "hp": 20,
+                "sp": 20
+            },
+            {
+                "name": "Robot B",
+                "position": [
+                    5,
+                    3
+                ],
+                "hp": 40,
+                "sp": 15
+            }
+        ],
+        "action": {
+            "robot_name": "Robot B",
+            "action": "attack"
+        }
+    },
+    {
+        "turn": 14,
+        "robots": [
+            {
+                "name": "Robot A",
+                "position": [
+                    4,
+                    3
+                ],
+                "hp": 20,
+                "sp": 10
+            },
+            {
+                "name": "Robot B",
+                "position": [
+                    5,
+                    3
+                ],
+                "hp": 20,
+                "sp": 15
+            }
+        ],
+        "action": {
+            "robot_name": "Robot A",
+            "action": "attack"
+        }
+    },
+    {
+        "turn": 15,
+        "robots": [
+            {
+                "name": "Robot A",
+                "position": [
+                    4,
+                    3
+                ],
+                "hp": 20,
+                "sp": 10
+            },
+            {
+                "name": "Robot B",
+                "position": [
+                    5,
+                    3
+                ],
+                "hp": 20,
+                "sp": 30
+            }
+        ],
+        "action": {
+            "robot_name": "Robot B",
+            "action": "evade"
+        }
+    },
+    {
+        "turn": 16,
+        "robots": [
+            {
+                "name": "Robot A",
+                "position": [
+                    4,
+                    3
+                ],
+                "hp": 20,
+                "sp": 25
+            },
+            {
+                "name": "Robot B",
+                "position": [
+                    5,
+                    3
+                ],
+                "hp": 20,
+                "sp": 30
+            }
+        ],
+        "action": {
+            "robot_name": "Robot A",
+            "action": "evade"
+        }
+    },
+    {
+        "turn": 17,
+        "robots": [
+            {
+                "name": "Robot A",
+                "position": [
+                    4,
+                    3
+                ],
+                "hp": 0,
+                "sp": 25
+            },
+            {
+                "name": "Robot B",
+                "position": [
+                    5,
+                    3
+                ],
+                "hp": 20,
+                "sp": 20
+            }
+        ],
+        "action": {
+            "robot_name": "Robot B",
+            "action": "attack"
+        }
+    }
+]
