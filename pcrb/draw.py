@@ -20,7 +20,7 @@ def draw_board(turn_data, x_max, y_max, title='', is_show=True):
 
     # 攻撃範囲の座標を保持するリスト
     attack_positions = []
-    evade_positions = []
+    rest_positions = []
     move_positions = []
 
     attacker_name = turn_data["action"]["robot_name"]
@@ -32,8 +32,8 @@ def draw_board(turn_data, x_max, y_max, title='', is_show=True):
             nx, ny = attack_x + dx, attack_y + dy
             if 0 <= nx < x_max and 0 <= ny < y_max:
                 attack_positions.append((ny, nx))  # プロット時は(y, x)順
-    elif turn_data["action"]["action"] == "evade":
-        evade_positions.append((attack_y, attack_x))  # プロット時は(y, x)順
+    elif turn_data["action"]["action"] == "rest":
+        rest_positions.append((attack_y, attack_x))  # プロット時は(y, x)順
     elif turn_data["action"]["action"] == "right":
         move_positions.append((attack_y, attack_x-1))  # プロット時は(y, x)順
     elif turn_data["action"]["action"] == "left":
@@ -57,8 +57,8 @@ def draw_board(turn_data, x_max, y_max, title='', is_show=True):
     if attack_positions:
         for y, x in attack_positions:
             plt.scatter(x, y, color='red', s=100, marker='s', edgecolors='black')
-    if evade_positions:
-        for y, x in evade_positions:
+    if rest_positions:
+        for y, x in rest_positions:
             plt.scatter(x, y, color='green', s=100, marker='s', edgecolors='black')
     if move_positions:
         for y, x in move_positions:

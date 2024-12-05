@@ -11,7 +11,7 @@ class Robot:
         self._attack_power = 20
         self._move_cost = 5
         self._attack_cost = 10
-        self._evade_recovery = 15
+        self._rest_recovery = 15
         self.robot_logic = robot_logic
         self.controller = controller
 
@@ -71,9 +71,9 @@ class Robot:
         else:
             self.controller.log_action(turn, f"{self._name} does not have enough SP to attack!")
 
-    def evade(self, turn):
-        self._sp += self._evade_recovery
-        self.controller.log_action(turn, f"{self._name} evades and recovers {self._evade_recovery} SP. Total SP: {self._sp}")
+    def rest(self, turn):
+        self._sp += self._rest_recovery
+        self.controller.log_action(turn, f"{self._name} rests and recovers {self._rest_recovery} SP. Total SP: {self._sp}")
 
     def is_alive(self):
         return self._hp > 0
@@ -116,8 +116,8 @@ class GameController:
         game_ifo = {'enemy_position': enemy_position}
         action = robot.robot_logic(robot, game_ifo)
 
-        if action == "evade":
-            robot.evade(self.turn)
+        if action == "rest":
+            robot.rest(self.turn)
         elif action == "attack":
             robot.attack(enemy, self.turn)
         elif action in ["up", "down", "left", "right"]:
@@ -170,10 +170,10 @@ class GameController:
 
 
 def robot_logic(robot, game_ifo):
-    # スタミナが少ない場合は回避、それ以外は敵に近づいて攻撃
+    # スタミナが少ない場合は休み、それ以外は敵に近づいて攻撃
     enemy_position = game_ifo['enemy_position']
     if robot.sp < 20:
-        return "evade"
+        return "rest"
     elif abs(robot.position[0] - enemy_position[0]) + abs(robot.position[1] - enemy_position[1]) == 1:
         return "attack"
     else:

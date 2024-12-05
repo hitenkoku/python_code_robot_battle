@@ -300,7 +300,7 @@
         ],
         "action": {
             "robot_name": "Robot A",
-            "action": "evade"
+            "action": "rest"
         }
     },
     {
@@ -327,7 +327,7 @@
         ],
         "action": {
             "robot_name": "Robot B",
-            "action": "evade"
+            "action": "rest"
         }
     },
     {
@@ -435,7 +435,7 @@
         ],
         "action": {
             "robot_name": "Robot B",
-            "action": "evade"
+            "action": "rest"
         }
     },
     {
@@ -462,7 +462,7 @@
         ],
         "action": {
             "robot_name": "Robot A",
-            "action": "evade"
+            "action": "rest"
         }
     },
     {
