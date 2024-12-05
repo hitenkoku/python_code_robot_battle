@@ -41,10 +41,39 @@ def is_safe_code(file_content):
         return False, f"Error analyzing code: {e}"
 
 
-def main():
+def load_player_module(file_content):
+    # サンドボックス的にモジュールをロード
+    import importlib.util
+
+    # ファイルを一時的に保存
+    file_path = "./uploaded_logic_safe.py"
+    with open(file_path, "w") as f:
+        f.write(file_content)
+
+    spec = importlib.util.spec_from_file_location("robot_logic_module", file_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    # robot_logic 関数を取得
+    robot_logic = getattr(module, "robot_logic", None)
+
+    return robot_logic
+
+
+def platy_game(robot_logic_a, robot_logic_b):
     from main import GameController
     from main import Robot
 
+    controller = GameController(max_turn=100, x_max=9, y_max=7)
+    robot1 = Robot("Robot A", 1, 3, robot_logic_a, controller)
+    robot2 = Robot("Robot B", 7, 3, robot_logic_b, controller)
+    controller.set_robots(robot1, robot2)
+    winner = controller.game_loop()
+
+    return winner
+
+
+def main():
     st.title("Python Code Robot Battle")
 
     uploaded_file = st.file_uploader("Upload a Python file with robot_logic function")
@@ -62,27 +91,10 @@ def main():
             st.error(f"Unsafe code detected: {message}")
         else:
             try:
-                # ファイルを一時的に保存
-                file_path = "./uploaded_logic_safe.py"
-                with open(file_path, "w") as f:
-                    f.write(file_content)
-
-                # サンドボックス的にモジュールをロード
-                import importlib.util
-
-                spec = importlib.util.spec_from_file_location("robot_logic_module", file_path)
-                module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(module)
-
-                # robot_logic 関数を取得
-                robot_logic = getattr(module, "robot_logic", None)
+                robot_logic = load_player_module(file_content)
                 if robot_logic:
                     st.success("Function loaded successfully!")
-                    controller = GameController(max_turn=100, x_max=9, y_max=7)
-                    robot1 = Robot("Robot A", 1, 3, robot_logic, controller)
-                    robot2 = Robot("Robot B", 7, 3, robot_logic, controller)
-                    controller.set_robots(robot1, robot2)
-                    winner = controller.game_loop()
+                    winner = platy_game(robot_logic, robot_logic)
 
                     st.header(f"{winner.name} wins!")
 
