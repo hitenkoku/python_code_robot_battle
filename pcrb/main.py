@@ -166,6 +166,7 @@ class GameController:
 
         json.dump(self.game_state, self.game_state_file, indent=4)
         self.game_state_file.close()
+        return winner
 
 
 def robot_logic(robot, game_ifo):
