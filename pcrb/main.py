@@ -113,8 +113,8 @@ class GameController:
         enemy = self.robot2 if robot == self.robot1 else self.robot1
         enemy_position = enemy.position
 
-        game_ifo = {'enemy_position': enemy_position}
-        action = robot.robot_logic(robot, game_ifo)
+        game_info = {'enemy_position': enemy_position}
+        action = robot.robot_logic(robot, game_info)
 
         if action == "rest":
             robot.rest(self.turn)
@@ -169,9 +169,9 @@ class GameController:
         return winner
 
 
-def robot_logic(robot, game_ifo):
+def robot_logic(robot, game_info):
     # スタミナが少ない場合は休み、それ以外は敵に近づいて攻撃
-    enemy_position = game_ifo['enemy_position']
+    enemy_position = game_info['enemy_position']
     if robot.sp < 20:
         return "rest"
     elif abs(robot.position[0] - enemy_position[0]) + abs(robot.position[1] - enemy_position[1]) == 1:
