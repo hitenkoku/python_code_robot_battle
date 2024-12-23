@@ -76,11 +76,12 @@ def main():
     from robots.stage01 import robot_logic as robot_logic_01
     from robots.stage02 import robot_logic as robot_logic_02
     from robots.stage03 import robot_logic as robot_logic_03
+    from robots.stage04 import robot_logic as robot_logic_04
     st.title("Python Code Robot Battle")
 
     uploaded_file = st.file_uploader("Upload a Python file with robot_logic function")
 
-    enemy_robot_logics = [robot_logic_01, robot_logic_02, robot_logic_03]
+    enemy_robot_logics = [robot_logic_01, robot_logic_02, robot_logic_03, robot_logic_04]
 
     if uploaded_file:
         file_content = uploaded_file.read().decode("utf-8")

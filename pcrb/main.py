@@ -2,7 +2,7 @@ import json
 
 
 class Robot:
-    def __init__(self, name, x, y, robot_logic, controller):
+    def __init__(self, name, x, y, robot_logic_function, controller):
         self._name = name
         self._x = x
         self._y = y
@@ -12,7 +12,10 @@ class Robot:
         self._move_cost = 5
         self._attack_cost = 10
         self._rest_recovery = 15
-        self.robot_logic = robot_logic
+        self._defense_mode = False
+        self._defense_reduction = 0.5  # 防御中のダメージ軽減率
+        self._defense_cost = 10  # 防御のコスト
+        self.robot_logic = robot_logic_function
         self.controller = controller
 
     @property
@@ -30,6 +33,14 @@ class Robot:
     @property
     def position(self):
         return self._x, self._y
+
+    def take_damage(self, damage):
+        if self._defense_mode:
+            damage *= self._defense_reduction
+        self._hp -= max(damage, 0)
+        if self._hp <= 0:
+            print(f"{self._name} has been destroyed!")
+        return damage
 
     def move(self, direction, turn):
         if self._sp < self._move_cost:
@@ -62,14 +73,27 @@ class Robot:
     def attack(self, other_robot, turn):
         if self._sp >= self._attack_cost:
             if abs(self._x - other_robot._x) + abs(self._y - other_robot._y) == 1:
-                damage = self._attack_power
-                other_robot._hp -= damage
+                damage = other_robot.take_damage(self._attack_power)
                 self._sp -= self._attack_cost
                 self.controller.log_action(turn, f"{self._name} attacks {other_robot.name} at ({other_robot._x}, {other_robot._y}) for {damage} damage.")
             else:
                 self.controller.log_action(turn, f"{self._name} tried to attack a non-adjacent location.")
         else:
             self.controller.log_action(turn, f"{self._name} does not have enough SP to attack!")
+
+    def defend(self, turn):
+        if self._sp >= self._defense_cost:
+            self._sp -= self._defense_cost
+            self._defense_mode = True
+            self.controller.log_action(turn, f"{self._name} is now in defense mode, reducing incoming damage.")
+        else:
+            self.controller.log_action(turn, f"{self._name} does not have enough SP to defend!")
+
+    def start_turn(self):
+        # 防御モードはターン開始時にリセット
+        if self._defense_mode:
+            print(f"{self._name} ends defense mode.")
+            self._defense_mode = False
 
     def rest(self, turn):
         self._sp += self._rest_recovery
@@ -116,12 +140,17 @@ class GameController:
         game_info = {'enemy_position': enemy_position}
         action = robot.robot_logic(robot, game_info)
 
+        robot.start_turn()
         if action == "rest":
             robot.rest(self.turn)
         elif action == "attack":
             robot.attack(enemy, self.turn)
+        elif action == "defend":
+            robot.defend(self.turn)
         elif action in ["up", "down", "left", "right"]:
             robot.move(action, self.turn)
+        else:
+            raise ValueError("Unexpected robot action detected!")
 
         return action
 
@@ -135,12 +164,14 @@ class GameController:
                     "position": self.robot1.position,
                     "hp": self.robot1.hp,
                     "sp": self.robot1.sp,
+                    "defense_mode": self.robot1._defense_mode,
                 },
                 {
                     "name": self.robot2.name,
                     "position": self.robot2.position,
                     "hp": self.robot2.hp,
                     "sp": self.robot2.sp,
+                    "defense_mode": self.robot2._defense_mode,
                 }
             ],
             'action': {
