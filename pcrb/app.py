@@ -1,7 +1,6 @@
 import streamlit as st
 import ast
 import traceback
-import json
 
 import sys
 sys.path.append('./pcrb')
@@ -74,6 +73,7 @@ def platy_game(robot_logic_a, robot_logic_b):
 
 
 def main():
+    from robots.stage03 import robot_logic as enemy_robot_logic
     st.title("Python Code Robot Battle")
 
     uploaded_file = st.file_uploader("Upload a Python file with robot_logic function")
@@ -91,10 +91,10 @@ def main():
             st.error(f"Unsafe code detected: {message}")
         else:
             try:
-                robot_logic = load_player_module(file_content)
-                if robot_logic:
+                player_robot_logic = load_player_module(file_content)
+                if player_robot_logic:
                     st.success("Function loaded successfully!")
-                    winner = platy_game(robot_logic, robot_logic)
+                    winner = platy_game(player_robot_logic, enemy_robot_logic)
 
                     st.header(f"{winner.name} wins!")
 

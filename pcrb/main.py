@@ -40,11 +40,11 @@ class Robot:
         if direction == "up":
             new_x, new_y = self._x, max(0, self._y - 1)
         elif direction == "down":
-            new_x, new_y = self._x, min(self.controller.y_max, self._y + 1)
+            new_x, new_y = self._x, min(self.controller.y_max - 1, self._y + 1)
         elif direction == "left":
             new_x, new_y = max(0, self._x - 1), self._y
         elif direction == "right":
-            new_x, new_y = min(self.controller.x_max, self._x + 1), self._y
+            new_x, new_y = min(self.controller.x_max - 1, self._x + 1), self._y
         else:
             self.controller.log_action(turn, f"{self._name} tried to move in an invalid direction.")
             return
