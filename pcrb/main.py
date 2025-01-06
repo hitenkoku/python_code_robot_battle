@@ -9,12 +9,14 @@ class Robot:
         self._hp = 100
         self._sp = 50
         self._attack_power = 20
-        self._move_cost = 5
         self._attack_cost = 10
+        self._move_cost = 5
         self._rest_recovery = 15
         self._defense_mode = False
         self._defense_reduction = 0.5  # 防御中のダメージ軽減率
         self._defense_cost = 10  # 防御のコスト
+        self._ranged_attack_cost = 15  # 遠距離攻撃のコスト
+        self._ranged_attack_power = 15  # 遠距離攻撃の威力
         self.robot_logic = robot_logic_function
         self.controller = controller
 
@@ -95,6 +97,18 @@ class Robot:
             print(f"{self._name} ends defense mode.")
             self._defense_mode = False
 
+    def ranged_attack(self, target, turn):
+        distance = abs(self._x - target._x) + abs(self._y - target._y)
+        if distance == 2:
+            if self._sp >= self._ranged_attack_cost:
+                self._sp -= self._ranged_attack_cost
+                damage = target.take_damage(self._ranged_attack_power)
+                self.controller.log_action(turn, f"{self._name} performs a ranged attack on {target.name} for {damage} damage!")
+            else:
+                self.controller.log_action(turn, f"{self._name} does not have enough SP to perform a ranged attack!")
+        else:
+            self.controller.log_action(turn, f"{self._name} cannot perform a ranged attack on {target.name} due to incorrect distance (distance: {distance}).")
+
     def rest(self, turn):
         self._sp += self._rest_recovery
         self.controller.log_action(turn, f"{self._name} rests and recovers {self._rest_recovery} SP. Total SP: {self._sp}")
@@ -102,6 +116,8 @@ class Robot:
     def is_alive(self):
         return self._hp > 0
 
+    def status(self):
+        print(f"{self._name}: HP={self._hp}, SP={self._sp}, Position=({self._x}, {self._y})")
 
 class GameController:
     def __init__(self, max_turn=100, x_max=9, y_max=9):
@@ -149,6 +165,8 @@ class GameController:
             robot.defend(self.turn)
         elif action in ["up", "down", "left", "right"]:
             robot.move(action, self.turn)
+        elif action == "ranged_attack":
+            robot.ranged_attack(enemy, self.turn)
         else:
             raise ValueError("Unexpected robot action detected!")
 
