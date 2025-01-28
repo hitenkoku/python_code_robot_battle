@@ -12,11 +12,16 @@ class Robot:
         self._attack_cost = 10
         self._move_cost = 5
         self._rest_recovery = 15
+
+        # 防御関連
         self._defense_mode = False
         self._defense_reduction = 0.5  # 防御中のダメージ軽減率
         self._defense_cost = 10  # 防御のコスト
+
+        # 遠距離攻撃関連
         self._ranged_attack_cost = 15  # 遠距離攻撃のコスト
         self._ranged_attack_power = 15  # 遠距離攻撃の威力
+
         self.robot_logic = robot_logic_function
         self.controller = controller
 
@@ -35,6 +40,18 @@ class Robot:
     @property
     def position(self):
         return self._x, self._y
+
+    @property
+    def x(self):
+        return self._x
+
+    @property
+    def y(self):
+        return self._y
+
+    @property
+    def defense_mode(self):
+        return self._defense_mode
 
     def take_damage(self, damage):
         if self._defense_mode:
@@ -74,10 +91,10 @@ class Robot:
 
     def attack(self, other_robot, turn):
         if self._sp >= self._attack_cost:
-            if abs(self._x - other_robot._x) + abs(self._y - other_robot._y) == 1:
+            if abs(self._x - other_robot.x) + abs(self._y - other_robot.y) == 1:
                 damage = other_robot.take_damage(self._attack_power)
                 self._sp -= self._attack_cost
-                self.controller.log_action(turn, f"{self._name} attacks {other_robot.name} at ({other_robot._x}, {other_robot._y}) for {damage} damage.")
+                self.controller.log_action(turn, f"{self._name} attacks {other_robot.name} at ({other_robot.x}, {other_robot.y}) for {damage} damage.")
             else:
                 self.controller.log_action(turn, f"{self._name} tried to attack a non-adjacent location.")
         else:
@@ -97,17 +114,17 @@ class Robot:
             print(f"{self._name} ends defense mode.")
             self._defense_mode = False
 
-    def ranged_attack(self, target, turn):
-        distance = abs(self._x - target._x) + abs(self._y - target._y)
+    def ranged_attack(self, other_robot, turn):
+        distance = abs(self._x - other_robot.x) + abs(self._y - other_robot.y)
         if distance == 2:
             if self._sp >= self._ranged_attack_cost:
                 self._sp -= self._ranged_attack_cost
-                damage = target.take_damage(self._ranged_attack_power)
-                self.controller.log_action(turn, f"{self._name} performs a ranged attack on {target.name} for {damage} damage!")
+                damage = other_robot.take_damage(self._ranged_attack_power)
+                self.controller.log_action(turn, f"{self._name} performs a ranged attack on {other_robot.name} for {damage} damage!")
             else:
                 self.controller.log_action(turn, f"{self._name} does not have enough SP to perform a ranged attack!")
         else:
-            self.controller.log_action(turn, f"{self._name} cannot perform a ranged attack on {target.name} due to incorrect distance (distance: {distance}).")
+            self.controller.log_action(turn, f"{self._name} cannot perform a ranged attack on {other_robot.name} due to incorrect distance (distance: {distance}).")
 
     def rest(self, turn):
         self._sp += self._rest_recovery
@@ -118,6 +135,7 @@ class Robot:
 
     def status(self):
         print(f"{self._name}: HP={self._hp}, SP={self._sp}, Position=({self._x}, {self._y})")
+
 
 class GameController:
     def __init__(self, max_turn=100, x_max=9, y_max=9):
@@ -182,14 +200,14 @@ class GameController:
                     "position": self.robot1.position,
                     "hp": self.robot1.hp,
                     "sp": self.robot1.sp,
-                    "defense_mode": self.robot1._defense_mode,
+                    "defense_mode": self.robot1.defense_mode,
                 },
                 {
                     "name": self.robot2.name,
                     "position": self.robot2.position,
                     "hp": self.robot2.hp,
                     "sp": self.robot2.sp,
-                    "defense_mode": self.robot2._defense_mode,
+                    "defense_mode": self.robot2.defense_mode,
                 }
             ],
             'action': {
@@ -205,8 +223,8 @@ class GameController:
             self.log_action(self.turn, f"\n--- Turn {self.turn} : {current_robot.name} turn ---")
             action = self.run_logic(current_robot)
             self.save_game_state(current_robot.name, action)  # 各ターンごとの状態を保存
-            self.log_action(self.turn, f" - {self.robot1.name} : HP: {self.robot1._hp}, SP: {self.robot1._sp}")
-            self.log_action(self.turn, f" - {self.robot2.name} : HP: {self.robot2._hp}, SP: {self.robot2._sp}")
+            self.log_action(self.turn, f" - {self.robot1.name} : HP: {self.robot1.hp}, SP: {self.robot1.sp}")
+            self.log_action(self.turn, f" - {self.robot2.name} : HP: {self.robot2.hp}, SP: {self.robot2.sp}")
             self.turn += 1
 
         winner = self.robot1 if self.robot1.hp > self.robot2.hp else self.robot2
