@@ -12,6 +12,7 @@ class Robot:
         self._attack_cost = 10
         self._move_cost = 5
         self._rest_recovery = 15
+        self._stun_duration = 0  # ロボットがスタンしている時間
 
         # 防御関連
         self._defense_mode = False
@@ -21,6 +22,12 @@ class Robot:
         # 遠距離攻撃関連
         self._ranged_attack_cost = 15  # 遠距離攻撃のコスト
         self._ranged_attack_power = 15  # 遠距離攻撃の威力
+
+        # パリィ関連
+        self._parry_mode = False  # パリィ中かどうか
+        self._parry_cooldown = 0  # パリィのクールタイム
+        self._parry_cooldown_time = 2  # クールタイムの初期値(何ターン後に使えるか)
+        self._parry_cost = 15  # パリィのコスト
 
         self.robot_logic = robot_logic_function
         self.controller = controller
@@ -53,7 +60,18 @@ class Robot:
     def defense_mode(self):
         return self._defense_mode
 
-    def take_damage(self, damage):
+    @property
+    def parry_mode(self):
+        return self._parry_mode
+
+    @property
+    def stun_duration(self):
+        return self._stun_duration
+
+    def receive_attack(self, damage):
+        """攻撃を受ける
+        :param damage: 攻撃のダメージ量
+        """
         if self._defense_mode:
             damage *= self._defense_reduction
         self._hp -= max(damage, 0)
@@ -92,9 +110,12 @@ class Robot:
     def attack(self, other_robot, turn):
         if self._sp >= self._attack_cost:
             if abs(self._x - other_robot.x) + abs(self._y - other_robot.y) == 1:
-                damage = other_robot.take_damage(self._attack_power)
-                self._sp -= self._attack_cost
-                self.controller.log_action(turn, f"{self._name} attacks {other_robot.name} at ({other_robot.x}, {other_robot.y}) for {damage} damage.")
+                if other_robot.parry_mode:
+                    self.stun(1)
+                else:
+                    damage = other_robot.receive_attack(self._attack_power)
+                    self._sp -= self._attack_cost
+                    self.controller.log_action(turn, f"{self._name} attacks {other_robot.name} at ({other_robot.x}, {other_robot.y}) for {damage} damage.")
             else:
                 self.controller.log_action(turn, f"{self._name} tried to attack a non-adjacent location.")
         else:
@@ -109,17 +130,28 @@ class Robot:
             self.controller.log_action(turn, f"{self._name} does not have enough SP to defend!")
 
     def start_turn(self):
-        # 防御モードはターン開始時にリセット
+        """ターン開始時にロボットの状態を更新"""
         if self._defense_mode:
             print(f"{self._name} ends defense mode.")
             self._defense_mode = False
+
+        if self._stun_duration > 0:
+            self._stun_duration -= 1
+            print(f"{self._name} is stunned. (duration={self._stun_duration})")
+
+        if self._parry_mode:
+            print(f"{self._name} ends parry mode.")
+            self._parry_mode = False
+
+        if self._parry_cooldown > 0:
+            self._parry_cooldown -= 1
 
     def ranged_attack(self, other_robot, turn):
         distance = abs(self._x - other_robot.x) + abs(self._y - other_robot.y)
         if distance == 2:
             if self._sp >= self._ranged_attack_cost:
                 self._sp -= self._ranged_attack_cost
-                damage = other_robot.take_damage(self._ranged_attack_power)
+                damage = other_robot.receive_attack(self._ranged_attack_power)
                 self.controller.log_action(turn, f"{self._name} performs a ranged attack on {other_robot.name} for {damage} damage!")
             else:
                 self.controller.log_action(turn, f"{self._name} does not have enough SP to perform a ranged attack!")
@@ -129,6 +161,25 @@ class Robot:
     def rest(self, turn):
         self._sp += self._rest_recovery
         self.controller.log_action(turn, f"{self._name} rests and recovers {self._rest_recovery} SP. Total SP: {self._sp}")
+
+    def parry(self, turn):
+        """パリィを実行する関数"""
+        if self._sp >= self._parry_cost and not self._parry_mode and self._parry_cooldown == 0:
+            self._parry_mode = True
+            self._sp -= self._parry_cost
+            self._parry_cooldown = self._parry_cooldown_time
+            self.controller.log_action(turn, f"{self._name} started parrying!")
+        elif self._parry_cooldown > 0:
+            self.controller.log_action(turn, f"{self._name}'s parry is on cooldown.")
+        else:
+            self.controller.log_action(turn, f"{self._name} doesn't have enough SP.")
+
+    def stun(self, duration):
+        """ロボットをスタン状態にする
+        :param duration: スタンの持続時間
+        """
+        self._stun_duration = duration
+        print(f"{self._name} was stunned.")
 
     def is_alive(self):
         return self._hp > 0
@@ -173,6 +224,9 @@ class GameController:
 
         game_info = {'enemy_position': enemy_position}
         action = robot.robot_logic(robot, game_info)
+
+        if robot.stun_duration > 0:
+            return "stun"
 
         robot.start_turn()
         if action == "rest":
