@@ -100,7 +100,7 @@ def main():
                 if player_robot_logic:
                     for _k, enemy_robot_logic in enumerate(enemy_robot_logics):
                         st.success(f"Function loaded successfully for enemy logic {_k + 1}!")
-                        winner = platy_game(player_robot_logic, enemy_robot_logic)
+                        winner, game_state = platy_game(player_robot_logic, enemy_robot_logic)
 
                         st.header(f"{winner.name} wins!")
 

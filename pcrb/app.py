@@ -1,9 +1,13 @@
 import streamlit as st
 import ast
 import traceback
+import json
 
 import sys
 sys.path.append('./pcrb')
+
+from pages.drawer import st_draw_board
+
 
 # 許可する関数とモジュール
 ALLOWED_FUNCTIONS = {"robot_logic"}
@@ -72,9 +76,43 @@ def platy_game(robot_logic_a, robot_logic_b):
     return winner
 
 
+def game_state_download_button(game_state):
+    # JSON文字列に変換
+    json_str = json.dumps(game_state, indent=4)
+
+    # JSONデータをバイナリに変換
+    json_bytes = json_str.encode('utf-8')
+
+    st.download_button(
+        label="Download game_state.json",
+        data=json_bytes,
+        file_name="game_state.json",
+        mime="application/json"
+    )
+
 def main():
     from robots.stage03 import robot_logic as enemy_robot_logic
     st.title("Python Code Robot Battle")
+
+    st.write("Please upload the file containing the robot's logic.")
+
+    st.write("---")
+
+    st.write("The sample is here")
+
+    sample_file_path = "samples/sample_robot_logic_file.py"  # ダウンロードさせたいスクリプトのパス
+
+    with open(sample_file_path, "r", encoding="utf-8") as file:
+        file_content = file.read()
+
+    st.download_button(
+        label="Download sample robot logic file",
+        data=file_content,
+        file_name="sample_robot_logic_file.py",
+        mime="text/plain"
+    )
+
+    st.write("---")
 
     uploaded_file = st.file_uploader("Upload a Python file with robot_logic function")
 
@@ -94,23 +132,17 @@ def main():
                 player_robot_logic = load_player_module(file_content)
                 if player_robot_logic:
                     st.success("Function loaded successfully!")
-                    winner = platy_game(player_robot_logic, enemy_robot_logic)
+                    winner, game_state = platy_game(player_robot_logic, enemy_robot_logic)
 
-                    st.header(f"{winner.name} wins!")
+                    if winner.name == "Robot A":
+                        st.header(f"Congratulations on your win!")
+                    else:
+                        st.header(f"It's okay, you'll get them next time.")
 
-                    try:
-                        with open(GAME_STATE_FILE, "r") as f:
-                            game_state_content = f.read()
-                        st.download_button(
-                            label="Download game_state.json",
-                            data=game_state_content,
-                            file_name="game_state.json",
-                            mime="application/json"
-                        )
-                    except FileNotFoundError:
-                        st.error("game_state.json file not found.")
-                    except Exception as e:
-                        st.error(f"Error reading game_state.json: {e}")
+                    game_state_download_button(game_state)
+
+                    st_draw_board(game_state)
+
                 else:
                     st.error("No function named `robot_logic` found in the uploaded file.")
             except Exception as e:
