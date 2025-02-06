@@ -59,7 +59,7 @@ def load_player_module(file_content):
     return robot_logic
 
 
-def platy_game(robot_logic_a, robot_logic_b):
+def play_game(robot_logic_a, robot_logic_b):
     from main import GameController
     from main import Robot
 
@@ -100,7 +100,7 @@ def main():
                 if player_robot_logic:
                     for _k, enemy_robot_logic in enumerate(enemy_robot_logics):
                         st.success(f"Function loaded successfully for enemy logic {_k + 1}!")
-                        winner, game_state = platy_game(player_robot_logic, enemy_robot_logic)
+                        winner, game_state = play_game(player_robot_logic, enemy_robot_logic)
 
                         st.header(f"{winner.name} wins!")
 
