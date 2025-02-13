@@ -67,9 +67,9 @@ def play_game(robot_logic_a, robot_logic_b):
     robot1 = Robot("Robot A", 1, 3, robot_logic_a, controller)
     robot2 = Robot("Robot B", 7, 3, robot_logic_b, controller)
     controller.set_robots(robot1, robot2)
-    winner = controller.game_loop()
+    winner, game_state = controller.game_loop()
 
-    return winner
+    return winner, game_state
 
 
 def main():
