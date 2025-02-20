@@ -188,10 +188,27 @@ class Robot:
         print(f"{self._name}: HP={self._hp}, SP={self._sp}, Position=({self._x}, {self._y})")
 
 
+def is_valid_memo(memo):
+    if not isinstance(memo, dict):
+        return False
+
+    for key, value in memo.items():
+        # キーが文字列かを確認
+        if not isinstance(key, str):
+            return False
+        # バリューが数値（int, float）、None、または文字列かを確認
+        if not (isinstance(value, (int, float, str)) or value is None):
+            return False
+
+    return True
+
+
 class GameController:
     def __init__(self, max_turn=100, x_max=9, y_max=9):
         self.robot1 = None
         self.robot2 = None
+        self.memos1 = None
+        self.memos2 = None
         self.turn = 0
         self.max_turn = max_turn
         self.x_max = x_max
@@ -210,6 +227,8 @@ class GameController:
     def set_robots(self, robot1, robot2):
         self.robot1 = robot1
         self.robot2 = robot2
+        self.memos1 = []
+        self.memos2 = []
 
     def log_action(self, turn, message):
         print(message)
@@ -220,10 +239,27 @@ class GameController:
 
     def run_logic(self, robot):
         enemy = self.robot2 if robot == self.robot1 else self.robot1
-        enemy_position = enemy.position
+        memos = self.memos2 if robot == self.robot1 else self.memos1
 
-        game_info = {'enemy_position': enemy_position}
-        action = robot.robot_logic(robot, game_info)
+        game_info = {
+            'enemy_hp': enemy.hp,
+            'enemy_position': enemy.position
+        }
+        response = robot.robot_logic(robot, game_info, memos)
+
+        if isinstance(response, str):
+            action = response
+            memo = {}
+        elif isinstance(response, (list, tuple)) and len(response) == 2:
+            action, memo = response
+            assert is_valid_memo(memo)
+        else:
+            assert False
+
+        if robot == self.robot1:
+            self.memos1.append(memo)
+        else:
+            self.memos2.append(memo)
 
         if robot.stun_duration > 0:
             return "stun"
@@ -239,6 +275,8 @@ class GameController:
             robot.move(action, self.turn)
         elif action == "ranged_attack":
             robot.ranged_attack(enemy, self.turn)
+        elif action == "parry":
+            robot.parry(self.turn)
         else:
             raise ValueError("Unexpected robot action detected!")
 
@@ -290,7 +328,7 @@ class GameController:
         return winner, self.game_state
 
 
-def robot_logic(robot, game_info):
+def robot_logic(robot, game_info, memos=None):
     # スタミナが少ない場合は休み、それ以外は敵に近づいて攻撃
     enemy_position = game_info['enemy_position']
     if robot.sp < 20:
