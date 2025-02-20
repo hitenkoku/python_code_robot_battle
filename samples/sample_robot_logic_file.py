@@ -1,5 +1,5 @@
 # 必須のrobot_logic関数を定義
-def robot_logic(robot, game_info):
+def robot_logic(robot, game_info, memos):
     # スタミナが少ない場合は休み、それ以外は敵に近づいて攻撃
     enemy_position = game_info['enemy_position']
     if robot.sp < 20:

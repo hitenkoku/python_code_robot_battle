@@ -204,7 +204,8 @@ def is_valid_memo(memo):
 
 
 class GameController:
-    def __init__(self, max_turn=100, x_max=9, y_max=9):
+    def __init__(
+            self, max_turn=100, x_max=9, y_max=9, robot1_initial_position=None, robot2_initial_position=None):
         self.robot1 = None
         self.robot2 = None
         self.memos1 = None
@@ -213,6 +214,8 @@ class GameController:
         self.max_turn = max_turn
         self.x_max = x_max
         self.y_max = y_max
+        self.robot1_initial_position = {'x': 1, 'y': 3} if robot1_initial_position is None else robot1_initial_position
+        self.robot2_initial_position = {'x': 7, 'y': 3} if robot2_initial_position is None else robot2_initial_position
         self.log_file = open("game_log.txt", "w")
         self.game_state_file = open("game_state.json", "w")
 
@@ -328,7 +331,7 @@ class GameController:
         return winner, self.game_state
 
 
-def robot_logic(robot, game_info, memos=None):
+def robot_logic(robot, game_info, memos):
     # スタミナが少ない場合は休み、それ以外は敵に近づいて攻撃
     enemy_position = game_info['enemy_position']
     if robot.sp < 20:
@@ -347,9 +350,16 @@ def robot_logic(robot, game_info, memos=None):
 
 
 def main():
-    controller = GameController(max_turn=100, x_max=9, y_max=7)
-    robot1 = Robot("Robot A", 1, 3, robot_logic, controller)
-    robot2 = Robot("Robot B", 7, 3, robot_logic, controller)
+    controller = GameController()
+
+    _x = controller.robot1_initial_position['x']
+    _y = controller.robot1_initial_position['y']
+    robot1 = Robot("Robot A", _x, _y, robot_logic, controller)
+
+    _x = controller.robot2_initial_position['x']
+    _y = controller.robot2_initial_position['y']
+    robot2 = Robot("Robot B", _x, _y, robot_logic, controller)
+
     controller.set_robots(robot1, robot2)
     controller.game_loop()
 
