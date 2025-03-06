@@ -257,7 +257,7 @@ class GameController:
         return action
 
     def run_logic(self, robot):
-        enemy = self.robot1 if robot == self.robot1 else self.robot2
+        enemy = self.robot1 if robot == self.robot2 else self.robot2
         memos = self.memos1 if robot == self.robot1 else self.memos2
         adjust_action = self.adjust_action_for_robot1 if robot == self.robot1 else self.adjust_action_for_robot2
 
