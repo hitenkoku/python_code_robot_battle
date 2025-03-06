@@ -240,9 +240,26 @@ class GameController:
     def is_position_occupied(self, x, y):
         return self.robot1.position == (x, y) or self.robot2.position == (x, y)
 
+    @staticmethod
+    def adjust_action_for_robot1(action):
+        return action
+
+    @staticmethod
+    def adjust_action_for_robot2(action):
+        if action == "up":
+            action = 'down'
+        if action == "up":
+            action = 'down'
+        if action == "left":
+            action = 'right'
+        if action == "right":
+            action = 'left'
+        return action
+
     def run_logic(self, robot):
-        enemy = self.robot2 if robot == self.robot1 else self.robot1
-        memos = self.memos2 if robot == self.robot1 else self.memos1
+        enemy = self.robot1 if robot == self.robot1 else self.robot2
+        memos = self.memos1 if robot == self.robot1 else self.memos2
+        adjust_action = self.adjust_action_for_robot1 if robot == self.robot1 else self.adjust_action_for_robot2
 
         game_info = {
             'enemy_hp': enemy.hp,
@@ -258,6 +275,8 @@ class GameController:
             assert is_valid_memo(memo)
         else:
             assert False
+
+        action = adjust_action(action)
 
         if robot == self.robot1:
             self.memos1.append(memo)
