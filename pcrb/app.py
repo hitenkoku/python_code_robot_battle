@@ -133,16 +133,17 @@ def main():
                 player_robot_logic = load_player_module(file_content)
                 if player_robot_logic:
                     st.success("Function loaded successfully!")
-                    winner, game_state = play_game(player_robot_logic, enemy_robot_logic)
+                    if "winner" not in st.session_state:
+                        st.session_state.winner, st.session_state.game_state = play_game(player_robot_logic, enemy_robot_logic)
 
-                    if winner.name == "Robot A":
+                    if st.session_state.winner.name == "Robot A":
                         st.header(f"Congratulations on your win!")
                     else:
                         st.header(f"It's okay, you'll get them next time.")
 
-                    game_state_download_button(game_state)
+                    game_state_download_button(st.session_state.game_state)
 
-                    st_draw_board(game_state)
+                    st_draw_board(st.session_state.game_state)
 
                 else:
                     st.error("No function named `robot_logic` found in the uploaded file.")
