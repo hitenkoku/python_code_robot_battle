@@ -1,4 +1,151 @@
 import json
+from abc import ABC
+from abc import abstractmethod
+
+
+def is_adjacent(actor, target):
+    return abs(actor.x - target.x) + abs(actor.y - target.y) == 1
+
+
+class Action(ABC):
+    def __init__(self, actor, controller, **kwargs):
+        super().__init__()
+        self.actor = actor
+        self.controller = controller
+
+    @abstractmethod
+    def __call__(self, **kwargs):
+        """行動を実行するメソッド（子クラスで実装が必要）"""
+        pass
+
+
+class Attack(Action):
+    power = 20
+    cost = 10
+
+    def __init__(self, actor, controller):
+        super().__init__(actor, controller)
+
+    def __call__(self, target, turn):
+        if self.actor.sp >= self.cost:
+            if is_adjacent(self.actor, target):
+                if target.is_parrying():
+                    self.actor.stun(1)
+                else:
+                    damage = target.receive_attack(self.power)
+                    self.actor.use_sp(self.cost)
+                    self.controller.log_action(turn, f"{self.actor.name} attacks {target.name} at ({target.x}, {target.y}) for {damage} damage.")
+            else:
+                self.controller.log_action(turn, f"{self.actor.name} tried to attack a non-adjacent location.")
+        else:
+            self.controller.log_action(turn, f"{self.actor.name} does not have enough SP to attack!")
+
+
+class Move(Action):
+    cost = 5
+
+    def __init__(self, actor, controller):
+        super().__init__(actor, controller)
+
+    def __call__(self, direction, turn):
+        if self.actor.sp < self.cost:
+            self.controller.log_action(turn, f"{self.actor.name} does not have enough SP to move!")
+            return
+
+        # 移動先の座標を計算
+        if direction == "up":
+            new_x, new_y = self.actor.x, max(0, self.actor.y - 1)
+        elif direction == "down":
+            new_x, new_y = self.actor.x, min(self.controller.y_max - 1, self.actor.y + 1)
+        elif direction == "left":
+            new_x, new_y = max(0, self.actor.x - 1), self.actor.y
+        elif direction == "right":
+            new_x, new_y = min(self.controller.x_max - 1, self.actor.x + 1), self.actor.y
+        else:
+            self.controller.log_action(turn, f"{self.actor.name} tried to move in an invalid direction.")
+            return
+
+        # 移動先に他のロボットがいないかチェック
+        if self.controller.is_position_occupied(new_x, new_y):
+            self.controller.log_action(
+                turn, f"{self.actor.name} tried to move to ({new_x}, {new_y}), but the path is blocked.")
+        else:
+            self.actor.set_position(new_x, new_y)
+            self.actor.use_sp(self.cost)
+            self.controller.log_action(
+                turn, f"{self.actor.name} moved {direction} to ({self.actor.x}, {self.actor.y}), HP: {self.actor.hp}, SP: {self.actor.sp}")
+
+
+class Defend(Action):
+    reduction = 0.5  # 防御中のダメージ軽減率
+    cost = 10  # 防御のコスト
+
+    def __init__(self, actor, controller):
+        super().__init__(actor, controller)
+        self.is_active = False
+
+    def __call__(self, turn):
+        if self.actor.sp >= self.cost:
+            self.actor.use_sp(self.cost)
+            self.is_active = True
+            self.controller.log_action(turn, f"{self.actor.name} is now in defense mode, reducing incoming damage.")
+        else:
+            self.controller.log_action(turn, f"{self.actor.name} does not have enough SP to defend!")
+
+
+class RangedAttack(Action):
+    cost = 15  # 遠距離攻撃のコスト
+    power = 15  # 遠距離攻撃の威力
+
+    def __init__(self, actor, controller):
+        super().__init__(actor, controller)
+
+    def __call__(self, target, turn):
+        distance = abs(self.actor.x - target.x) + abs(self.actor.y - target.y)
+        if distance == 2:
+            if self.actor.sp >= self.cost:
+                self.actor.use_sp(self.cost)
+                damage = target.receive_attack(self.power)
+                self.controller.log_action(
+                    turn, f"{self.actor.name} performs a ranged attack on {target.name} for {damage} damage!")
+            else:
+                self.controller.log_action(
+                    turn, f"{self.actor.name} does not have enough SP to perform a ranged attack!")
+        else:
+            self.controller.log_action(
+                turn, f"{self.actor.name} cannot perform a ranged attack on {target.name} due to incorrect distance (distance: {distance}).")
+
+
+class Parry(Action):
+    cooldown_duration = 2  # クールタイムの初期値(何ターン後に使えるか)
+    cost = 15  # パリィのコスト
+
+    def __init__(self, actor, controller):
+        super().__init__(actor, controller)
+        self.is_active = False  # パリィ中かどうか
+        self.cooldown_counter = 0  # パリィのクールタイム
+
+    def __call__(self, turn):
+        if self.actor.sp >= self.cost and not self.is_active and self.cooldown_counter == 0:
+            self.is_active = True
+            self.actor.use_sp(self.cost)
+            self.cooldown_counter = self.cooldown_duration
+            self.controller.log_action(turn, f"{self.actor.name} started parrying!")
+        elif self.cooldown_counter > 0:
+            self.controller.log_action(turn, f"{self.actor.name}'s parry is on cooldown.")
+        else:
+            self.controller.log_action(turn, f"{self.actor.name} doesn't have enough SP.")
+
+
+class Rest(Action):
+    recovery_value = 15
+
+    def __init__(self, actor, controller):
+        super().__init__(actor, controller)
+
+    def __call__(self, turn):
+        self.actor.recovery_sp(self.recovery_value)
+        self.controller.log_action(turn, f"{self.actor.name} rests and recovers {self.recovery_value} SP. Total SP: {self.actor.sp}")
 
 
 class Robot:
@@ -8,26 +155,33 @@ class Robot:
         self._y = y
         self._hp = 100
         self._sp = 50
-        self._attack_power = 20
-        self._attack_cost = 10
-        self._move_cost = 5
-        self._rest_recovery = 15
-        self._stun_duration = 0  # ロボットがスタンしている時間
+        # self._attack_power = 20
+        # self._attack_cost = 10
+        # self._move_cost = 5
+        # self._rest_recovery = 15
+        self._stun_counter = 0  # ロボットがスタンしている時間
 
-        # 防御関連
-        self._defense_mode = False
-        self._defense_reduction = 0.5  # 防御中のダメージ軽減率
-        self._defense_cost = 10  # 防御のコスト
+        self.attack = Attack(self, controller)
+        self.move = Move(self, controller)
+        self.defend = Defend(self, controller)
+        self.ranged_attack = RangedAttack(self, controller)
+        self.parry = Parry(self, controller)
+        self.rest = Rest(self, controller)
 
-        # 遠距離攻撃関連
-        self._ranged_attack_cost = 15  # 遠距離攻撃のコスト
-        self._ranged_attack_power = 15  # 遠距離攻撃の威力
+        # # 防御関連
+        # self._defense_mode = False
+        # self._defense_reduction = 0.5  # 防御中のダメージ軽減率
+        # self._defense_cost = 10  # 防御のコスト
 
-        # パリィ関連
-        self._parry_mode = False  # パリィ中かどうか
-        self._parry_cooldown = 0  # パリィのクールタイム
-        self._parry_cooldown_time = 2  # クールタイムの初期値(何ターン後に使えるか)
-        self._parry_cost = 15  # パリィのコスト
+        # # 遠距離攻撃関連
+        # self._ranged_attack_cost = 15  # 遠距離攻撃のコスト
+        # self._ranged_attack_power = 15  # 遠距離攻撃の威力
+
+        # # パリィ関連
+        # self._parry_mode = False  # パリィ中かどうか
+        # self._parry_cooldown = 0  # パリィのクールタイム
+        # self._parry_cooldown_time = 2  # クールタイムの初期値(何ターン後に使えるか)
+        # self._parry_cost = 15  # パリィのコスト
 
         self.robot_logic = robot_logic_function
         self.controller = controller
@@ -56,129 +210,144 @@ class Robot:
     def y(self):
         return self._y
 
-    @property
-    def defense_mode(self):
-        return self._defense_mode
+    # @property
+    # def defense_mode(self):
+    #     return self._defense_mode
 
     @property
-    def parry_mode(self):
-        return self._parry_mode
-
-    @property
-    def stun_duration(self):
-        return self._stun_duration
+    def stun_counter(self):
+        return self._stun_counter
 
     def receive_attack(self, damage):
         """攻撃を受ける
         :param damage: 攻撃のダメージ量
         """
-        if self._defense_mode:
-            damage *= self._defense_reduction
+        # if self._defense_mode:
+        #     damage *= self._defense_reduction
+        if self.defend.is_active:
+            damage *= self.defend.reduction
         self._hp -= max(damage, 0)
         if self._hp <= 0:
             print(f"{self._name} has been destroyed!")
         return damage
 
-    def move(self, direction, turn):
-        if self._sp < self._move_cost:
-            self.controller.log_action(turn, f"{self._name} does not have enough SP to move!")
-            return
-
-        # 移動先の座標を計算
-        if direction == "up":
-            new_x, new_y = self._x, max(0, self._y - 1)
-        elif direction == "down":
-            new_x, new_y = self._x, min(self.controller.y_max - 1, self._y + 1)
-        elif direction == "left":
-            new_x, new_y = max(0, self._x - 1), self._y
-        elif direction == "right":
-            new_x, new_y = min(self.controller.x_max - 1, self._x + 1), self._y
+    def use_sp(self, amount):
+        """SPを消費するメソッド。"""
+        if self._sp >= amount:
+            self._sp -= amount
         else:
-            self.controller.log_action(turn, f"{self._name} tried to move in an invalid direction.")
-            return
+            assert False
 
-        # 移動先に他のロボットがいないかチェック
-        if self.controller.is_position_occupied(new_x, new_y):
-            self.controller.log_action(
-                turn, f"{self._name} tried to move to ({new_x}, {new_y}), but the path is blocked.")
-        else:
-            self._x, self._y = new_x, new_y
-            self._sp -= self._move_cost
-            self.controller.log_action(
-                turn, f"{self._name} moved {direction} to ({self._x}, {self._y}), HP: {self._hp}, SP: {self._sp}")
+    def recovery_sp(self, amount):
+        """SPを回復するメソッド。"""
+        self._sp += amount
 
-    def attack(self, other_robot, turn):
-        if self._sp >= self._attack_cost:
-            if abs(self._x - other_robot.x) + abs(self._y - other_robot.y) == 1:
-                if other_robot.parry_mode:
-                    self.stun(1)
-                else:
-                    damage = other_robot.receive_attack(self._attack_power)
-                    self._sp -= self._attack_cost
-                    self.controller.log_action(turn, f"{self._name} attacks {other_robot.name} at ({other_robot.x}, {other_robot.y}) for {damage} damage.")
-            else:
-                self.controller.log_action(turn, f"{self._name} tried to attack a non-adjacent location.")
-        else:
-            self.controller.log_action(turn, f"{self._name} does not have enough SP to attack!")
+    def is_parrying(self):
+        return self.parry.is_active
 
-    def defend(self, turn):
-        if self._sp >= self._defense_cost:
-            self._sp -= self._defense_cost
-            self._defense_mode = True
-            self.controller.log_action(turn, f"{self._name} is now in defense mode, reducing incoming damage.")
-        else:
-            self.controller.log_action(turn, f"{self._name} does not have enough SP to defend!")
+    def set_position(self, new_x, new_y):
+        self._x, self._y = new_x, new_y
+
+    # def move(self, direction, turn):
+    #     if self._sp < self._move_cost:
+    #         self.controller.log_action(turn, f"{self._name} does not have enough SP to move!")
+    #         return
+    #
+    #     # 移動先の座標を計算
+    #     if direction == "up":
+    #         new_x, new_y = self._x, max(0, self._y - 1)
+    #     elif direction == "down":
+    #         new_x, new_y = self._x, min(self.controller.y_max - 1, self._y + 1)
+    #     elif direction == "left":
+    #         new_x, new_y = max(0, self._x - 1), self._y
+    #     elif direction == "right":
+    #         new_x, new_y = min(self.controller.x_max - 1, self._x + 1), self._y
+    #     else:
+    #         self.controller.log_action(turn, f"{self._name} tried to move in an invalid direction.")
+    #         return
+    #
+    #     # 移動先に他のロボットがいないかチェック
+    #     if self.controller.is_position_occupied(new_x, new_y):
+    #         self.controller.log_action(
+    #             turn, f"{self._name} tried to move to ({new_x}, {new_y}), but the path is blocked.")
+    #     else:
+    #         self._x, self._y = new_x, new_y
+    #         self._sp -= self._move_cost
+    #         self.controller.log_action(
+    #             turn, f"{self._name} moved {direction} to ({self._x}, {self._y}), HP: {self._hp}, SP: {self._sp}")
+
+    # def attack(self, other_robot, turn):
+    #     if self._sp >= self._attack_cost:
+    #         if abs(self._x - other_robot.x) + abs(self._y - other_robot.y) == 1:
+    #             if other_robot.parry_mode:
+    #                 self.stun(1)
+    #             else:
+    #                 damage = other_robot.receive_attack(self._attack_power)
+    #                 self._sp -= self._attack_cost
+    #                 self.controller.log_action(turn, f"{self._name} attacks {other_robot.name} at ({other_robot.x}, {other_robot.y}) for {damage} damage.")
+    #         else:
+    #             self.controller.log_action(turn, f"{self._name} tried to attack a non-adjacent location.")
+    #     else:
+    #         self.controller.log_action(turn, f"{self._name} does not have enough SP to attack!")
+
+    # def defend(self, turn):
+    #     if self._sp >= self._defense_cost:
+    #         self._sp -= self._defense_cost
+    #         self._defense_mode = True
+    #         self.controller.log_action(turn, f"{self._name} is now in defense mode, reducing incoming damage.")
+    #     else:
+    #         self.controller.log_action(turn, f"{self._name} does not have enough SP to defend!")
 
     def start_turn(self):
         """ターン開始時にロボットの状態を更新"""
-        if self._defense_mode:
+        if self.defend.is_active:
             print(f"{self._name} ends defense mode.")
-            self._defense_mode = False
+            self.defend.is_active = False
 
-        if self._stun_duration > 0:
-            self._stun_duration -= 1
-            print(f"{self._name} is stunned. (duration={self._stun_duration})")
+        if self._stun_counter > 0:
+            self._stun_counter -= 1
+            print(f"{self._name} is stunned. (duration={self._stun_counter})")
 
-        if self._parry_mode:
+        if self.parry.is_active:
             print(f"{self._name} ends parry mode.")
-            self._parry_mode = False
+            self.parry.is_active = False
 
-        if self._parry_cooldown > 0:
-            self._parry_cooldown -= 1
+        if self.parry.cooldown_counter > 0:
+            self.parry.cooldown_counter -= 1
 
-    def ranged_attack(self, other_robot, turn):
-        distance = abs(self._x - other_robot.x) + abs(self._y - other_robot.y)
-        if distance == 2:
-            if self._sp >= self._ranged_attack_cost:
-                self._sp -= self._ranged_attack_cost
-                damage = other_robot.receive_attack(self._ranged_attack_power)
-                self.controller.log_action(turn, f"{self._name} performs a ranged attack on {other_robot.name} for {damage} damage!")
-            else:
-                self.controller.log_action(turn, f"{self._name} does not have enough SP to perform a ranged attack!")
-        else:
-            self.controller.log_action(turn, f"{self._name} cannot perform a ranged attack on {other_robot.name} due to incorrect distance (distance: {distance}).")
+    # def ranged_attack(self, other_robot, turn):
+    #     distance = abs(self._x - other_robot.x) + abs(self._y - other_robot.y)
+    #     if distance == 2:
+    #         if self._sp >= self._ranged_attack_cost:
+    #             self._sp -= self._ranged_attack_cost
+    #             damage = other_robot.receive_attack(self._ranged_attack_power)
+    #             self.controller.log_action(turn, f"{self._name} performs a ranged attack on {other_robot.name} for {damage} damage!")
+    #         else:
+    #             self.controller.log_action(turn, f"{self._name} does not have enough SP to perform a ranged attack!")
+    #     else:
+    #         self.controller.log_action(turn, f"{self._name} cannot perform a ranged attack on {other_robot.name} due to incorrect distance (distance: {distance}).")
 
-    def rest(self, turn):
-        self._sp += self._rest_recovery
-        self.controller.log_action(turn, f"{self._name} rests and recovers {self._rest_recovery} SP. Total SP: {self._sp}")
+    # def rest(self, turn):
+    #     self._sp += self._rest_recovery
+    #     self.controller.log_action(turn, f"{self._name} rests and recovers {self._rest_recovery} SP. Total SP: {self._sp}")
 
-    def parry(self, turn):
-        """パリィを実行する関数"""
-        if self._sp >= self._parry_cost and not self._parry_mode and self._parry_cooldown == 0:
-            self._parry_mode = True
-            self._sp -= self._parry_cost
-            self._parry_cooldown = self._parry_cooldown_time
-            self.controller.log_action(turn, f"{self._name} started parrying!")
-        elif self._parry_cooldown > 0:
-            self.controller.log_action(turn, f"{self._name}'s parry is on cooldown.")
-        else:
-            self.controller.log_action(turn, f"{self._name} doesn't have enough SP.")
+    # def parry(self, turn):
+    #     """パリィを実行する関数"""
+    #     if self._sp >= self._parry_cost and not self._parry_mode and self._parry_cooldown == 0:
+    #         self._parry_mode = True
+    #         self._sp -= self._parry_cost
+    #         self._parry_cooldown = self._parry_cooldown_time
+    #         self.controller.log_action(turn, f"{self._name} started parrying!")
+    #     elif self._parry_cooldown > 0:
+    #         self.controller.log_action(turn, f"{self._name}'s parry is on cooldown.")
+    #     else:
+    #         self.controller.log_action(turn, f"{self._name} doesn't have enough SP.")
 
     def stun(self, duration):
         """ロボットをスタン状態にする
         :param duration: スタンの持続時間
         """
-        self._stun_duration = duration
+        self._stun_counter = duration
         print(f"{self._name} was stunned.")
 
     def is_alive(self):
@@ -283,7 +452,7 @@ class GameController:
         else:
             self.memos2.append(memo)
 
-        if robot.stun_duration > 0:
+        if robot.stun_counter > 0:
             return "stun"
 
         robot.start_turn()
@@ -354,18 +523,18 @@ def robot_logic(robot, game_info, memos):
     # スタミナが少ない場合は休み、それ以外は敵に近づいて攻撃
     enemy_position = game_info['enemy_position']
     if robot.sp < 20:
-        return "rest"
+        return "rest", memos
     elif abs(robot.position[0] - enemy_position[0]) + abs(robot.position[1] - enemy_position[1]) == 1:
-        return "attack"
+        return "attack", memos
     else:
         if robot.position[0] < enemy_position[0]:
-            return "right"
+            return "right", memos
         elif robot.position[0] > enemy_position[0]:
-            return "left"
+            return "left", memos
         elif robot.position[1] < enemy_position[1]:
-            return "down"
+            return "down", memos
         else:
-            return "up"
+            return "up", memos
 
 
 def main():

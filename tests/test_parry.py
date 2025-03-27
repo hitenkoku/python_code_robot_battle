@@ -15,9 +15,9 @@ def test():
     robot.status()
     target.status()
 
-    assert not robot._parry_mode
-    assert robot._parry_cooldown == 0
-    assert target._stun_duration == 0
+    assert not robot.parry.is_active
+    assert robot.parry.cooldown_counter == 0
+    assert target._stun_counter == 0
 
     robot.start_turn()
     robot.parry(1)  # パリーを実施
@@ -27,9 +27,9 @@ def test():
     target.status()
 
     assert robot.hp == 100
-    assert robot._parry_mode
-    assert robot._parry_cooldown == 2
-    assert target._stun_duration == 1
+    assert robot.parry.is_active
+    assert robot.parry.cooldown_counter == 2
+    assert target._stun_counter == 1
 
     robot.start_turn()
     robot.parry(1)  # パリーを実施(クールダウン中のため失敗)
@@ -39,9 +39,9 @@ def test():
     target.status()
 
     assert robot.hp < 100
-    assert not robot._parry_mode
-    assert robot._parry_cooldown == 1
-    assert target._stun_duration == 0
+    assert not robot.parry.is_active
+    assert robot.parry.cooldown_counter == 1
+    assert target._stun_counter == 0
 
     robot.start_turn()
     robot.attack(robot, 1)
@@ -51,9 +51,9 @@ def test():
     target.status()
 
     assert robot.hp < 100
-    assert not robot._parry_mode
-    assert robot._parry_cooldown == 0
-    assert target._stun_duration == 0
+    assert not robot.parry.is_active
+    assert robot.parry.cooldown_counter == 0
+    assert target._stun_counter == 0
 
 
 if __name__ == "__main__":
