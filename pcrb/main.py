@@ -469,6 +469,7 @@ class GameController:
         elif action == "parry":
             robot.parry(self.turn)
         else:
+            print(f"Invalid action: {action}")
             raise ValueError("Unexpected robot action detected!")
 
         return action
@@ -483,14 +484,14 @@ class GameController:
                     "position": self.robot1.position,
                     "hp": self.robot1.hp,
                     "sp": self.robot1.sp,
-                    "defense_mode": self.robot1.defense_mode,
+                    "defense_mode": self.robot1.defend.is_active,
                 },
                 {
                     "name": self.robot2.name,
                     "position": self.robot2.position,
                     "hp": self.robot2.hp,
                     "sp": self.robot2.sp,
-                    "defense_mode": self.robot2.defense_mode,
+                    "defense_mode": self.robot2.defend.is_active,
                 }
             ],
             'action': {
