@@ -92,7 +92,7 @@ def game_state_download_button(game_state):
 
 
 def main():
-    from robots.stage03 import robot_logic as enemy_robot_logic
+    from robots.robot_03_random_walker import robot_logic as enemy_robot_logic
     st.title("Python Code Robot Battle")
     st.write("---")
 
