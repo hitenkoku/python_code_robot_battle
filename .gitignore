@@ -4,6 +4,7 @@ game_log.txt
 .gitignore
 uploaded_logic_safe.py
 game_state.json
+.DS_Store
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -167,5 +168,6 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
+
 
 
