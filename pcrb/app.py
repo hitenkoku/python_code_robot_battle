@@ -11,7 +11,7 @@ from pages.drawer import st_draw_board
 
 # 許可する関数とモジュール
 ALLOWED_FUNCTIONS = {"robot_logic"}
-ALLOWED_MODULES = set()
+ALLOWED_MODULES = ['random', 'math']
 GAME_STATE_FILE = "./game_state.json"  # 既存のgame_state.jsonファイル
 
 
@@ -25,12 +25,19 @@ def is_safe_code(file_content):
 
         for node in ast.walk(tree):
             # インポートのチェック
-            if isinstance(node, (ast.Import, ast.ImportFrom)):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    print(f"Importing module: {alias.name}")
+                    if alias.name not in ALLOWED_MODULES:
+                        return False, f"Unauthorized module import: {alias.name}"
+            elif isinstance(node, ast.ImportFrom):
+                print(f"Importing from module: {node.module}")
                 if node.module not in ALLOWED_MODULES:
                     return False, f"Unauthorized module import: {node.module}"
 
             # 関数定義以外のコードを制限
             if isinstance(node, ast.FunctionDef):
+                print(f"Defining function: {node.name}")
                 if node.name not in ALLOWED_FUNCTIONS:
                     return False, f"Unauthorized function definition: {node.name}"
 
@@ -41,6 +48,8 @@ def is_safe_code(file_content):
 
         return True, "Code is safe"
     except Exception as e:
+        error_details = traceback.format_exc()
+        print(f"Error analyzing code: {error_details}")
         return False, f"Error analyzing code: {e}"
 
 

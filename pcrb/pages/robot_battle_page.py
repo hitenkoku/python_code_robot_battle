@@ -3,6 +3,8 @@ import importlib.util
 import os
 import traceback
 import pandas as pd
+import json
+import base64  
 
 import sys
 sys.path.append('./pcrb')
@@ -61,7 +63,15 @@ def battle_with_saved_robots(player_robot_logic):
                 enemy_robot_logic = getattr(module, "robot_logic")
                 winner, game_state = play_game(player_robot_logic, enemy_robot_logic)
                 result, color = determine_result(winner)
-                results.append((module_name, f'<span style="color:{color}; font-weight:bold;">{result}</span>'))
+
+                # game_state を JSON 文字列に変換
+                game_state_json = json.dumps(game_state, indent=4)
+
+                # Base64 エンコードしてダウンロードリンクを生成
+                b64 = base64.b64encode(game_state_json.encode()).decode()
+                download_link = f'<a href="data:application/json;base64,{b64}" download="{module_name}_log.json">Download</a>'
+
+                results.append((module_name, f'<span style="color:{color}; font-weight:bold;">{result}</span>', download_link))
         except Exception as e:
             st.warning(f"Error loading robot module {module_name}: {traceback.format_exc()}")
             continue
@@ -83,9 +93,23 @@ def display_results(results):
     """対戦結果を表示する"""
     st.subheader("🤖 対戦結果")
     if results:
-        df = pd.DataFrame(results, columns=["対戦相手", "結果"])
+        # DataFrameを作成
+        df = pd.DataFrame(results, columns=["対戦相手", "結果", "ログ"])
         df["結果"] = df["結果"].apply(lambda x: f'<p style="text-align:center;">{x}</p>')  # 結果を中央寄せ
+        df["ログ"] = df["ログ"].apply(lambda x: f'<p style="text-align:center;">{x}</p>')  # ログリンクを中央寄せ
         st.markdown(df.to_html(escape=False, index=False), unsafe_allow_html=True)
+
+        # 勝利数と総試合数を計算
+        total_matches = len(results)
+        wins = sum(1 for result in results if "勝利" in result[1])
+
+        # 勝敗結果を表示
+        st.markdown(f"""
+            <div style="text-align:center;">
+                <h2 style="margin:0;">勝利数: {wins} 勝</h2>
+                <p style="font-size:14px; color:gray;">(試合数: {total_matches} 戦)</p>
+            </div>
+        """, unsafe_allow_html=True)
     else:
         st.info("対戦相手が見つかりませんでした。")
 
@@ -101,6 +125,11 @@ def main():
             display_results(results)
         else:
             st.error("No function named `robot_logic` found in the uploaded file.")
+    else:
+        if not file_content:
+            st.warning("ファイルがアップロードされていません。ロジックファイルをアップロードしてください。")
+        elif not validate_code(file_content):
+            st.error("アップロードされたコードが安全ではありません。修正して再度アップロードしてください。")
 
 
 if __name__ == "__main__":
