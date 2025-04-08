@@ -148,6 +148,55 @@ class Rest(Action):
         self.controller.log_action(turn, f"{self.actor.name} rests and recovers {self.recovery_value} SP. Total SP: {self.actor.sp}")
 
 
+class Trap(Action):
+    cost = 15  # 罠設置のコスト
+    damage = 25  # 罠のダメージ
+
+    def __init__(self, actor, controller):
+        super().__init__(actor, controller)
+        self.traps = []  # 設置された罠のリスト
+
+    def __call__(self, direction, turn):
+        if self.actor.sp < self.cost:
+            self.controller.log_action(turn, f"{self.actor.name} does not have enough SP to set a trap!")
+            return
+
+        # 罠を設置する位置を計算
+        if direction == "trap_up":
+            position = (self.actor.x, max(0, self.actor.y - 1))
+        elif direction == "trap_down":
+            position = (self.actor.x, min(self.controller.y_max - 1, self.actor.y + 1))
+        elif direction == "trap_left":
+            position = (max(0, self.actor.x - 1), self.actor.y)
+        elif direction == "trap_right":
+            position = (min(self.controller.x_max - 1, self.actor.x + 1), self.actor.y)
+        else:
+            self.controller.log_action(turn, f"{self.actor.name} tried to set a trap in an invalid direction.")
+            return
+
+        # 設置先に他のロボットがいないかチェック
+        if self.controller.is_position_occupied(*position):
+            self.controller.log_action(turn, f"{self.actor.name} tried to set a trap at {position}, but the position is occupied.")
+            return
+
+        # 設置先にトラップがないかチェック（自分または相手のトラップ）
+        if self.controller.is_trap_at_position(*position):
+            self.controller.log_action(turn, f"{self.actor.name} tried to set a trap at {position}, but a trap is already there.")
+            return
+
+        # 罠を設置
+        self.actor.use_sp(self.cost)
+        self.traps.append(position)
+        self.controller.log_action(turn, f"{self.actor.name} set a trap at {position}.")
+
+    def check_trap(self, target):
+        """敵が罠にかかったかを確認し、ダメージを与える"""
+        if target.position in self.traps:
+            self.traps.remove(target.position)
+            damage = target.receive_attack(self.damage)
+            self.controller.log_action(self.controller.turn, f"{target.name} stepped on a trap and took {damage} damage!")
+
+
 class Robot:
     def __init__(self, name, x, y, robot_logic_function, controller):
         self._name = name
@@ -167,6 +216,7 @@ class Robot:
         self.ranged_attack = RangedAttack(self, controller)
         self.parry = Parry(self, controller)
         self.rest = Rest(self, controller)
+        self.trap = Trap(self, controller)
 
         # # 防御関連
         # self._defense_mode = False
@@ -359,14 +409,17 @@ class Robot:
 
 def is_valid_memo(memo):
     if not isinstance(memo, dict):
+        print("Memo is not a dictionary.")
         return False
 
     for key, value in memo.items():
         # キーが文字列かを確認
         if not isinstance(key, str):
+            print(f"Key '{key}' is not a string.")
             return False
         # バリューが数値（int, float）、None、または文字列かを確認
         if not (isinstance(value, (int, float, str)) or value is None):
+            print(f"Value '{value}' is not a valid type (int, float, str, or None).")
             return False
 
     return True
@@ -407,8 +460,13 @@ class GameController:
         self.log_file.write(f"Turn {turn}: {message}\n")
 
     def is_position_occupied(self, x, y):
+        """指定された位置にロボットがいるかを確認"""
         return self.robot1.position == (x, y) or self.robot2.position == (x, y)
-
+    
+    def is_trap_at_position(self, x, y):
+        """指定された位置にトラップがあるかを確認（自分または相手のトラップ）"""
+        return (x, y) in self.robot1.trap.traps or (x, y) in self.robot2.trap.traps
+    
     @staticmethod
     def adjust_action_for_robot1(action):
         return action
@@ -429,6 +487,8 @@ class GameController:
         enemy = self.robot1 if robot == self.robot2 else self.robot2
         memos = self.memos1 if robot == self.robot1 else self.memos2
         adjust_action = self.adjust_action_for_robot1 if robot == self.robot1 else self.adjust_action_for_robot2
+
+        robot.trap.check_trap(enemy)  # 罠のチェック
 
         game_info = {
             'enemy_hp': enemy.hp,
@@ -468,6 +528,8 @@ class GameController:
             robot.ranged_attack(enemy, self.turn)
         elif action == "parry":
             robot.parry(self.turn)
+        elif action in ["trap_up", "trap_down", "trap_left", "trap_right"]:
+            robot.trap(action, self.turn)
         else:
             print(f"Invalid action: {action}")
             raise ValueError("Unexpected robot action detected!")
@@ -523,19 +585,20 @@ class GameController:
 def robot_logic(robot, game_info, memos):
     # スタミナが少ない場合は休み、それ以外は敵に近づいて攻撃
     enemy_position = game_info['enemy_position']
+    memo = {}
     if robot.sp < 20:
-        return "rest", memos
+        return "rest", memo
     elif abs(robot.position[0] - enemy_position[0]) + abs(robot.position[1] - enemy_position[1]) == 1:
-        return "attack", memos
+        return "attack", memo
     else:
         if robot.position[0] < enemy_position[0]:
-            return "right", memos
+            return "right", memo
         elif robot.position[0] > enemy_position[0]:
-            return "left", memos
+            return "left", memo
         elif robot.position[1] < enemy_position[1]:
-            return "down", memos
+            return "down", memo
         else:
-            return "up", memos
+            return "up", memo
 
 
 def main():
