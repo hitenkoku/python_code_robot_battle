@@ -197,6 +197,32 @@ class Trap(Action):
             self.controller.log_action(self.controller.turn, f"{target.name} stepped on a trap and took {damage} damage!")
 
 
+class Steal(Action):
+    cost = 10  # スタミナを盗む行動のコスト
+    steal_amount = 15  # 奪うスタミナの量
+
+    def __init__(self, actor, controller):
+        super().__init__(actor, controller)
+
+    def __call__(self, target, turn):
+        if self.actor.sp < self.cost:
+            self.controller.log_action(turn, f"{self.actor.name} does not have enough SP to steal!")
+            return
+
+        if is_adjacent(self.actor, target):
+            if target.sp > 0:
+                stolen_sp = min(self.steal_amount, target.sp)
+                target.use_sp(stolen_sp)
+                self.actor.recovery_sp(stolen_sp)
+                self.actor.use_sp(self.cost)
+                self.controller.log_action(
+                    turn, f"{self.actor.name} steals {stolen_sp} SP from {target.name}.")
+            else:
+                self.controller.log_action(turn, f"{target.name} has no SP to steal!")
+        else:
+            self.controller.log_action(turn, f"{self.actor.name} tried to steal from a non-adjacent target.")
+
+
 class Robot:
     def __init__(self, name, x, y, robot_logic_function, controller):
         self._name = name
@@ -217,6 +243,7 @@ class Robot:
         self.parry = Parry(self, controller)
         self.rest = Rest(self, controller)
         self.trap = Trap(self, controller)
+        self.steal = Steal(self, controller)
 
         # # 防御関連
         # self._defense_mode = False
@@ -530,6 +557,8 @@ class GameController:
             robot.parry(self.turn)
         elif action in ["trap_up", "trap_down", "trap_left", "trap_right"]:
             robot.trap(action, self.turn)
+        elif action == "steal":
+            robot.steal(enemy, self.turn)
         else:
             print(f"Invalid action: {action}")
             raise ValueError("Unexpected robot action detected!")
