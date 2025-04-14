@@ -281,6 +281,33 @@ class Camouflage(Action):
                 self.controller.log_action(self.controller.turn, f"{self.actor.name}'s camouflage has worn off.")
 
 
+class Scan(Action):
+    cost = 10  # スキャンのコスト
+    duration = 1  # スキャンの持続ターン数
+
+    def __init__(self, actor, controller):
+        super().__init__(actor, controller)
+        self.is_active = False  # スキャン中かどうか
+        self.remaining_turns = 0  # スキャンの残りターン数
+
+    def __call__(self, turn):
+        if self.actor.sp < self.cost:
+            self.controller.log_action(turn, f"{self.actor.name} does not have enough SP to scan!")
+            return
+
+        self.actor.use_sp(self.cost)
+        self.is_active = True
+        self.remaining_turns = self.duration
+
+    def update(self):
+        """ターンごとにスキャンの状態を更新"""
+        if self.is_active:
+            self.remaining_turns -= 1
+            if self.remaining_turns <= 0:
+                self.is_active = False
+                self.controller.log_action(self.controller.turn, f"{self.actor.name}'s scan effect has worn off.")
+
+
 class Robot:
     def __init__(self, name, x, y, robot_logic_function, controller):
         self._name = name
@@ -304,6 +331,7 @@ class Robot:
         self.steal = Steal(self, controller)
         self.teleport = Teleport(self, controller)
         self.camouflage = Camouflage(self, controller)
+        self.scan = Scan(self, controller)
 
         # # 防御関連
         # self._defense_mode = False
@@ -455,6 +483,9 @@ class Robot:
         if self.camouflage.is_active:
             self.camouflage.update()
 
+        if self.scan.is_active:
+            self.scan.update()
+
     # def ranged_attack(self, other_robot, turn):
     #     distance = abs(self._x - other_robot.x) + abs(self._y - other_robot.y)
     #     if distance == 2:
@@ -586,8 +617,11 @@ class GameController:
             'enemy_hp': enemy.hp,
             'enemy_position': enemy.position
         }
-        if enemy.camouflage.is_active:
+        if not robot.scan.is_active and enemy.camouflage.is_active:
             game_info['enemy_position'] = None  # 位置情報を隠す
+        if robot.scan.is_active:
+            game_info['enemy_sp'] = enemy.sp
+            game_info['enemy_traps'] = enemy.trap.traps.copy()
 
         response = robot.robot_logic(robot, game_info, memos)
 
@@ -631,6 +665,8 @@ class GameController:
             robot.teleport(self.turn)
         elif action == "camouflage":
             robot.camouflage(self.turn)
+        elif action == "scan":
+            robot.scan(self.turn)
         else:
             print(f"Invalid action: {action}")
             raise ValueError("Unexpected robot action detected!")
