@@ -223,6 +223,33 @@ class Steal(Action):
             self.controller.log_action(turn, f"{self.actor.name} tried to steal from a non-adjacent target.")
 
 
+class Teleport(Action):
+    cost = 20  # テレポートのコスト
+
+    def __init__(self, actor, controller):
+        super().__init__(actor, controller)
+
+    def __call__(self, turn):
+        if self.actor.sp < self.cost:
+            self.controller.log_action(turn, f"{self.actor.name} does not have enough SP to teleport!")
+            return
+
+        import random
+        # ランダムな位置を生成（フィールド内に収まるように調整）
+        new_x = random.randint(0, self.controller.x_max - 1)
+        new_y = random.randint(0, self.controller.y_max - 1)
+
+        # 移動先に他のロボットがいないかチェック
+        if self.controller.is_position_occupied(new_x, new_y):
+            self.controller.log_action(turn, f"{self.actor.name} tried to teleport to ({new_x}, {new_y}), but the position is occupied.")
+            return
+
+        # テレポートを実行
+        self.actor.use_sp(self.cost)
+        self.actor.set_position(new_x, new_y)
+        self.controller.log_action(turn, f"{self.actor.name} teleported to ({new_x}, {new_y}).")
+
+
 class Robot:
     def __init__(self, name, x, y, robot_logic_function, controller):
         self._name = name
@@ -244,6 +271,7 @@ class Robot:
         self.rest = Rest(self, controller)
         self.trap = Trap(self, controller)
         self.steal = Steal(self, controller)
+        self.teleport = Teleport(self, controller)
 
         # # 防御関連
         # self._defense_mode = False
@@ -559,6 +587,8 @@ class GameController:
             robot.trap(action, self.turn)
         elif action == "steal":
             robot.steal(enemy, self.turn)
+        elif action == "teleport":
+            robot.teleport(self.turn)
         else:
             print(f"Invalid action: {action}")
             raise ValueError("Unexpected robot action detected!")
