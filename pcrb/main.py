@@ -250,6 +250,37 @@ class Teleport(Action):
         self.controller.log_action(turn, f"{self.actor.name} teleported to ({new_x}, {new_y}).")
 
 
+class Camouflage(Action):
+    cost = 20  # カモフラージュのコスト
+    duration = 3  # カモフラージュの持続ターン数
+
+    def __init__(self, actor, controller):
+        super().__init__(actor, controller)
+        self.is_active = False  # カモフラージュ中かどうか
+        self.remaining_turns = 0  # カモフラージュの残りターン数
+
+    def __call__(self, turn):
+        if self.actor.sp < self.cost:
+            self.controller.log_action(turn, f"{self.actor.name} does not have enough SP to activate camouflage!")
+            return
+
+        if not self.is_active:
+            self.actor.use_sp(self.cost)
+            self.is_active = True
+            self.remaining_turns = self.duration
+            self.controller.log_action(turn, f"{self.actor.name} activates camouflage and hides its position for {self.duration} turns!")
+        else:
+            self.controller.log_action(turn, f"{self.actor.name} is already camouflaged!")
+
+    def update(self):
+        """ターンごとにカモフラージュの状態を更新"""
+        if self.is_active:
+            self.remaining_turns -= 1
+            if self.remaining_turns <= 0:
+                self.is_active = False
+                self.controller.log_action(self.controller.turn, f"{self.actor.name}'s camouflage has worn off.")
+
+
 class Robot:
     def __init__(self, name, x, y, robot_logic_function, controller):
         self._name = name
@@ -272,6 +303,7 @@ class Robot:
         self.trap = Trap(self, controller)
         self.steal = Steal(self, controller)
         self.teleport = Teleport(self, controller)
+        self.camouflage = Camouflage(self, controller)
 
         # # 防御関連
         # self._defense_mode = False
@@ -420,6 +452,9 @@ class Robot:
         if self.parry.cooldown_counter > 0:
             self.parry.cooldown_counter -= 1
 
+        if self.camouflage.is_active:
+            self.camouflage.update()
+
     # def ranged_attack(self, other_robot, turn):
     #     distance = abs(self._x - other_robot.x) + abs(self._y - other_robot.y)
     #     if distance == 2:
@@ -545,10 +580,15 @@ class GameController:
 
         robot.trap.check_trap(enemy)  # 罠のチェック
 
+        # 敵がカモフラージュ中の場合、位置情報を隠す
         game_info = {
+            'turn': self.turn,
             'enemy_hp': enemy.hp,
             'enemy_position': enemy.position
         }
+        if enemy.camouflage.is_active:
+            game_info['enemy_position'] = None  # 位置情報を隠す
+
         response = robot.robot_logic(robot, game_info, memos)
 
         if isinstance(response, str):
@@ -589,6 +629,8 @@ class GameController:
             robot.steal(enemy, self.turn)
         elif action == "teleport":
             robot.teleport(self.turn)
+        elif action == "camouflage":
+            robot.camouflage(self.turn)
         else:
             print(f"Invalid action: {action}")
             raise ValueError("Unexpected robot action detected!")
