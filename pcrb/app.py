@@ -73,8 +73,8 @@ def load_player_module(file_content):
 
 
 def play_game(robot_logic_a, robot_logic_b):
-    from main import GameController
-    from main import Robot
+    from pcrb.controller import GameController
+    from pcrb.robot import Robot
 
     controller = GameController(max_turn=100, x_max=9, y_max=7)
     robot1 = Robot("Robot A", 1, 3, robot_logic_a, controller)
