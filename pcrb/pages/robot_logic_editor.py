@@ -14,30 +14,28 @@ st.set_page_config(layout="wide")
 default_code = textwrap.dedent("""
 def robot_logic(robot, game_info, memos):
     # Example logic
-    if not game_info:          # 敵がいない / 情報無しなら待機
-        return "rest"
-
     enemy_position = game_info['enemy_position']
-    enemy_hp       = game_info['enemy_hp']
+    enemy_hp = game_info['enemy_hp']
     distance = abs(robot.position[0] - enemy_position[0]) + abs(robot.position[1] - enemy_position[1])
+    memo = {'enemy_position': str(enemy_position)}
 
     if robot.sp < 20:
-        return "rest"
+        return "rest", memo
 
     if distance == 1:
-        return "attack"
+        return "attack", memo
 
     if distance == 2 and robot.sp >= 15:
-        return "ranged_attack"
+        return "ranged_attack", memo
 
     if robot.position[0] < enemy_position[0]:
-        return "right"
+        return "right", memo
     elif robot.position[0] > enemy_position[0]:
-        return "left"
+        return "left", memo
     elif robot.position[1] < enemy_position[1]:
-        return "down"
+        return "down", memo
     else:
-        return "up"
+        return "up", memo
 """)
 
 # ------------------------------------------------------------------------
@@ -169,11 +167,12 @@ with right_col:
         # 3) プレイヤーターン
         game_info = controller.build_game_info(player)
         if game_info is not None:
-            player_action = controller.run_logic(player)
+            player_action, player_memo = controller.run_logic(player)
             controller.save_game_state(player.name, player_action)
             controller.turn += 1
             st.success("Player turn executed!")
             st.write("Player Action:", player_action)
+            st.write("Player Memo:", player_memo)
             st.write("Game State after Player:", controller.game_state[-1])
         else:
             st.warning("No valid game_info for Player ‒ turn skipped.")
@@ -181,11 +180,12 @@ with right_col:
         # 4) 敵ターン
         game_info = controller.build_game_info(enemy)
         if game_info is not None:
-            opponent_action = controller.run_logic(enemy)
+            opponent_action, opponent_memo = controller.run_logic(enemy)
             controller.save_game_state(enemy.name, opponent_action)
             controller.turn += 1
             st.session_state["last_opponent_action"] = opponent_action
             st.write("Opponent Action:", opponent_action)
+            st.write("Opponent Memo:", opponent_memo)
             st.write("Game State after Opponent:", controller.game_state[-1])
         else:
             st.warning("No valid game_info for Opponent ‒ turn skipped.")

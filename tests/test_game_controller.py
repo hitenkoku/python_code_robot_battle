@@ -21,20 +21,20 @@ def test_adjust_action():
     robot2 = Robot("robot2", 0, 1, robot_logic_a, controller)
     controller.set_robots(robot1, robot2)
 
-    action = controller.run_logic(robot1)
+    action, _ = controller.run_logic(robot1)
     assert action == "right"
 
-    action = controller.run_logic(robot2)
+    action, _ = controller.run_logic(robot2)
     assert action == "left"
 
     robot1 = Robot("robot1", 0, 0, robot_logic_b, controller)
     robot2 = Robot("robot2", 0, 1, robot_logic_b, controller)
     controller.set_robots(robot1, robot2)
 
-    action = controller.run_logic(robot1)
+    action, _ = controller.run_logic(robot1)
     assert action == "up"
 
-    action = controller.run_logic(robot2)
+    action, _ = controller.run_logic(robot2)
     assert action == "down"
 
 
