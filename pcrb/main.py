@@ -1,5 +1,6 @@
 from .utils import is_valid_memo
 from .robot import Robot
+from .controller import GameController
 
 
 def robot_logic(robot, game_info, memos):

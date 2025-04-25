@@ -1,6 +1,6 @@
 import json
 
-from .utils import is_valid_memo
+from utils import is_valid_memo
 
 
 class GameController:
@@ -68,17 +68,7 @@ class GameController:
 
         robot.trap.check_trap(enemy)  # 罠のチェック
 
-        # 敵がカモフラージュ中の場合、位置情報を隠す
-        game_info = {
-            'turn': self.turn,
-            'enemy_hp': enemy.hp,
-            'enemy_position': enemy.position
-        }
-        if not robot.scan.is_active and enemy.camouflage.is_active:
-            game_info['enemy_position'] = None  # 位置情報を隠す
-        if robot.scan.is_active:
-            game_info['enemy_sp'] = enemy.sp
-            game_info['enemy_traps'] = enemy.trap.traps.copy()
+        game_info = self.build_game_info(robot)
 
         response = robot.robot_logic(robot, game_info, memos)
 
@@ -175,3 +165,68 @@ class GameController:
         self.game_state_file.close()
         return winner, self.game_state
 
+    def build_game_info(self, robot):
+        """
+        指定した robot から見たゲーム状況を辞書で返す。
+        ・スキャン中なら敵 SP や罠の座標も渡す
+        ・敵がカモフラージュ中で、自分がスキャンしていない場合は
+          敵の位置を None にして隠す
+        """
+        enemy = self.robot1 if robot is self.robot2 else self.robot2
+
+        info = {
+            "turn":            self.turn,
+            "enemy_hp":        enemy.hp,
+            "enemy_position":  enemy.position,   # 後で条件付きで None にする
+            "max_turn":        self.max_turn,
+            "board_size":      {"x_max": self.x_max, "y_max": self.y_max},
+        }
+
+        # カモフラージュによる位置隠蔽
+        if not robot.scan.is_active and enemy.camouflage.is_active:
+            info["enemy_position"] = None
+
+        # スキャンしていれば追加情報を開示
+        if robot.scan.is_active:
+            info["enemy_sp"]    = enemy.sp
+            info["enemy_traps"] = enemy.trap.traps.copy()
+
+        return info
+
+    def reset(self):
+        """試合を完全リセットして新しいゲームを開始できるようにする"""
+
+        # 1) ターンとメモをクリア
+        self.turn   = 0
+        self.memos1 = []
+        self.memos2 = []
+
+        # 2) ロボットを初期位置・初期ステータスに戻す
+        for robot, init_pos in (
+            (self.robot1, self.robot1_initial_position),
+            (self.robot2, self.robot2_initial_position),
+        ):
+            if robot is not None:
+                # Robot クラス内の reset に委譲
+                robot.reset(init_pos["x"], init_pos["y"])
+
+        # 3) ゲームステートを初期化
+        self.game_state = [{
+            "settings": {
+                "max_turn": self.max_turn,
+                "x_max":    self.x_max,
+                "y_max":    self.y_max,
+            }
+        }]
+
+        # 4) ログファイル／ステートファイルをクリア（追記でなく新規）
+        if not self.log_file.closed:
+            self.log_file.close()
+        self.log_file = open("game_log.txt", "w")
+
+        if not self.game_state_file.closed:
+            self.game_state_file.close()
+        self.game_state_file = open("game_state.json", "w")
+
+        # 5) 完了メッセージ（任意）
+        print("[GameController] Reset complete. Ready for a new match.")

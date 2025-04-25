@@ -1,14 +1,14 @@
-from .actions import Attack
-from .actions import Move
-from .actions import Defend
-from .actions import RangedAttack
-from .actions import Parry
-from .actions import Rest
-from .actions import Trap
-from .actions import Steal
-from .actions import Teleport
-from .actions import Camouflage
-from .actions import Scan
+from actions import Attack
+from actions import Move
+from actions import Defend
+from actions import RangedAttack
+from actions import Parry
+from actions import Rest
+from actions import Trap
+from actions import Steal
+from actions import Teleport
+from actions import Camouflage
+from actions import Scan
 
 
 class Robot:
@@ -140,3 +140,38 @@ class Robot:
 
     def status(self):
         print(f"{self._name}: HP={self._hp}, SP={self._sp}, Position=({self._x}, {self._y})")
+
+    def reset(self, x: int, y: int):
+        """
+        * 位置を (x, y) に戻す  
+        * HP / SP / スタンなどの数値を初期値へ  
+        * 各アクションオブジェクトのフラグやクールダウンを初期化
+        """
+        # 位置
+        self._x, self._y = x, y
+
+        # 基本ステータス
+        self._hp = 100
+        self._sp = 50
+        self._stun_counter = 0
+
+        # アクション系フラグをリセット
+        self.defend.is_active      = False
+        self.parry.is_active       = False
+        self.parry.cooldown_counter = 0
+        self.camouflage.is_active  = False
+        self.scan.is_active        = False
+
+        # 罠を全消去
+        self.trap.traps.clear()
+
+        # 各アクションに reset() があれば呼ぶ（クールダウンなどを内包）
+        for ability in [
+            self.attack, self.move, self.defend, self.ranged_attack,
+            self.parry, self.rest, self.trap, self.steal, self.teleport,
+            self.camouflage, self.scan,
+        ]:
+            if hasattr(ability, "reset") and callable(ability.reset):
+                ability.reset()
+
+        print(f"[RESET] {self._name} is back to ({x}, {y})  HP=100  SP=50")

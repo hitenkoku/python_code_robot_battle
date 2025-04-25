@@ -3,10 +3,9 @@ import ast
 import traceback
 import json
 
-import sys
-sys.path.append('./pcrb')
-
 from pages.drawer import st_draw_board
+from controller import GameController
+from robot import Robot
 
 
 # 許可する関数とモジュール
@@ -73,9 +72,6 @@ def load_player_module(file_content):
 
 
 def play_game(robot_logic_a, robot_logic_b):
-    from pcrb.controller import GameController
-    from pcrb.robot import Robot
-
     controller = GameController(max_turn=100, x_max=9, y_max=7)
     robot1 = Robot("Robot A", 1, 3, robot_logic_a, controller)
     robot2 = Robot("Robot B", 7, 3, robot_logic_b, controller)
@@ -162,7 +158,9 @@ def main():
                 else:
                     st.error("No function named `robot_logic` found in the uploaded file.")
             except Exception as e:
-                st.error(f"Error processing the uploaded file: {traceback.format_exc()}")
+                error_details = traceback.format_exc()  # エラー詳細を取得
+                print(f"Error processing the uploaded file:\n{error_details}")  # ターミナルに出力
+                st.error(f"Error processing the uploaded file: {e}")  # Streamlit にエラーを表示
 
 
 if __name__ == "__main__":

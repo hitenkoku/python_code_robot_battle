@@ -1,7 +1,7 @@
 from abc import ABC
 from abc import abstractmethod
 
-from .utils import is_adjacent
+from utils import is_adjacent
 
 
 class Action(ABC):
