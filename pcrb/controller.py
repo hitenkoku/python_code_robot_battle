@@ -184,7 +184,7 @@ class GameController:
 
         # カモフラージュによる位置隠蔽
         if not robot.scan.is_active and enemy.camouflage.is_active:
-            info["enemy_position"] = None
+            info["enemy_position"] = enemy.camouflage.last_known_position  # 最後に知られている位置を使用
 
         # スキャンしていれば追加情報を開示
         if robot.scan.is_active:

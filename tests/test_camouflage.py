@@ -7,12 +7,12 @@ from controller import GameController
 
 
 def robot_logic(robot, game_info, memos):
-    """テスト用ロジック: カモフラージュを使用"""
-    if 0 < game_info['turn'] < 3:
-        assert game_info['enemy_position'] is None, "Enemy position should be hidden when camouflaged."
-
-    if robot.sp >= 20 and not robot.camouflage.is_active:
+    """テスト用ロジック: 最初のターンでカモフラージュを使用し、次のターンで右に移動"""
+    print("game_info['turn'] :", game_info['turn'])
+    if game_info['turn'] == 0 and robot.sp >= 20 and not robot.camouflage.is_active:
         return "camouflage"
+    elif game_info['turn'] == 1:
+        return "right"
     return "rest"
 
 
@@ -31,21 +31,35 @@ def test_camouflage():
     assert not robot1.camouflage.is_active, "Robot A should not be camouflaged initially."
     assert not robot2.camouflage.is_active, "Robot B should not be camouflaged initially."
 
-    # カモフラージュを使用
+    # ターン0: カモフラージュを使用
     controller.run_logic(robot1)
-
-    # カモフラージュが有効になったことを確認
+    controller.turn += 1
     assert robot1.camouflage.is_active, "Robot A should be camouflaged after using camouflage."
     assert robot1.camouflage.remaining_turns == 3, "Camouflage duration should be 3 turns."
+    game_info = controller.build_game_info(robot2)
+    assert game_info["enemy_position"] == (1, 3), "Enemy position should be the last known position when camouflaged."
+
+    # ターン1: 右に移動
+    controller.run_logic(robot1)
+    controller.turn += 1
+    game_info = controller.build_game_info(robot2)
+    assert robot1.camouflage.is_active, "Camouflage should remain active during its duration."
+    assert game_info["enemy_position"] == (1, 3), "Enemy position should remain the last known position during camouflage."
 
     # カモフラージュの持続ターンをシミュレート
-    for _ in range(2):
-        robot1.start_turn()
+    for _ in range(1):  # 残りの持続ターンを進める
+        controller.run_logic(robot1)
+        controller.turn += 1
+        game_info = controller.build_game_info(robot2)
         assert robot1.camouflage.is_active, "Camouflage should remain active during its duration."
+        assert game_info["enemy_position"] == (1, 3), "Enemy position should remain the last known position during camouflage."
 
     # カモフラージュが終了したことを確認
-    robot1.start_turn()
+    controller.run_logic(robot1)
+    controller.turn += 1
     assert not robot1.camouflage.is_active, "Camouflage should no longer be active after its duration ends."
+    game_info = controller.build_game_info(robot2)
+    assert game_info["enemy_position"] == (2, 3), "Enemy position should update to the current position after camouflage ends."
 
 
 if __name__ == "__main__":

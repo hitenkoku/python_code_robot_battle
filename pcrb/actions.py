@@ -267,6 +267,7 @@ class Camouflage(Action):
         super().__init__(actor, controller)
         self.is_active = False  # カモフラージュ中かどうか
         self.remaining_turns = 0  # カモフラージュの残りターン数
+        self.last_known_position = None  # カモフラージュ開始時の位置を保持
 
     def __call__(self, turn):
         if self.actor.sp < self.cost:
@@ -277,6 +278,7 @@ class Camouflage(Action):
             self.actor.use_sp(self.cost)
             self.is_active = True
             self.remaining_turns = self.duration
+            self.last_known_position = self.actor.position  # 現在の位置を記録
             self.controller.log_action(turn, f"{self.actor.name} activates camouflage and hides its position for {self.duration} turns!")
         else:
             self.controller.log_action(turn, f"{self.actor.name} is already camouflaged!")
