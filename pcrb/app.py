@@ -162,7 +162,9 @@ def main() -> None:
         winner, game_state = play_game(player_robot_logic, enemy_robot_logic)
 
         if winner.name == "Robot A":
-            st.balloons()
+            if 'balloons_shown' not in st.session_state or not st.session_state.balloons_shown:
+                st.balloons()
+                st.session_state.balloons_shown = True
             st.header("🎉 勝利おめでとうございます！")
         else:
             st.header("🤖 残念！ 次の挑戦をお待ちしています。")
