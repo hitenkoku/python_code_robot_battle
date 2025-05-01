@@ -4,7 +4,7 @@ import streamlit as st
 import sys
 sys.path.append('./pcrb')
 
-from draw import draw_board
+from draw import draw_board_v2 as draw_board
 
 def st_draw_board(data):
     title_holder = st.empty()
@@ -56,8 +56,8 @@ def st_draw_board(data):
     title = f"Turn {turn_data['turn']} - Action: {_action['robot_name']} -> {_action['action']}"
     title_holder.header(title)
 
-    plt = draw_board(turn_data, x_max, y_max, title='', is_show=False)
-    board_holder.pyplot(plt)
+    fig = draw_board(turn_data, x_max, y_max, title='', is_show=False)
+    board_holder.pyplot(fig)
 
 
 def main():

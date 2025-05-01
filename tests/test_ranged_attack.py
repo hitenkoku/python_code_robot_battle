@@ -1,9 +1,9 @@
 import sys
 
-sys.path.append('./')
+sys.path.append('./pcrb')
 
-from pcrb.main import Robot
-from pcrb.main import GameController
+from robot import Robot
+from controller import GameController
 
 
 def test():
