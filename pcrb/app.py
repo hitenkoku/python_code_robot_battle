@@ -158,10 +158,11 @@ def main() -> None:
             return
 
         # --- ゲーム開始 ---
-        st.success("✅ コードの読み込みに成功しました！ 対戦を開始します。")
-        winner, game_state = play_game(player_robot_logic, enemy_robot_logic)
+        if 'winner' not in st.session_state:
+            st.success("✅ コードの読み込みに成功しました！ 対戦を開始します。")
+            st.session_state.winner, st.session_state.game_state = play_game(player_robot_logic, enemy_robot_logic)
 
-        if winner.name == "Robot A":
+        if st.session_state.winner.name == "Robot A":
             if 'balloons_shown' not in st.session_state or not st.session_state.balloons_shown:
                 st.balloons()
                 st.session_state.balloons_shown = True
@@ -170,10 +171,10 @@ def main() -> None:
             st.header("🤖 残念！ 次の挑戦をお待ちしています。")
 
         # ゲーム結果ダウンロード
-        game_state_download_button(game_state)
+        game_state_download_button(st.session_state.game_state)
 
         # 盤面描画
-        st_draw_board(game_state)
+        st_draw_board(st.session_state.game_state)
 
 
 if __name__ == "__main__":

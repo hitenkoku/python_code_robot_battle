@@ -6,7 +6,6 @@ sys.path.append('./pcrb')
 
 from draw import draw_board_v2 as draw_board
 
-
 def st_draw_board(data):
     title_holder = st.empty()
     turn_slider_holder = st.empty()
@@ -21,7 +20,7 @@ def st_draw_board(data):
     y_max = settings['y_max']
 
     memo_holder.write(max_turn)
-
+    st.sidebar.write("Debug info:", data)
     all_turn_data = data[1:]
 
     # Initialize session state for the current turn
@@ -46,7 +45,7 @@ def st_draw_board(data):
 
     # Sync slider with button actions
     turn_id = st.session_state.current_turn
-
+    st.sidebar.write("Debug info:", turn_id)
     turn_data = all_turn_data[turn_id]
 
     _action = turn_data['action']
