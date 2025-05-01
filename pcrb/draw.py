@@ -25,25 +25,28 @@ def draw_board(turn_data, x_max, y_max, title='', is_show=True):
     rest_positions = []
     move_positions = []
 
+    # アクションの処理
     attacker_name = turn_data["action"]["robot_name"]
-    attack_x, attack_y = robot_positions[attacker_name]
-    # アクションが攻撃である場合、攻撃範囲を設定
-    if turn_data["action"]["action"] == "attack":
-        # 四方1マスの範囲を攻撃範囲として設定
-        for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-            nx, ny = attack_x + dx, attack_y + dy
-            if 0 <= nx < x_max and 0 <= ny < y_max:
-                attack_positions.append((ny, nx))  # プロット時は(y, x)順
-    elif turn_data["action"]["action"] == "rest":
-        rest_positions.append((attack_y, attack_x))  # プロット時は(y, x)順
-    elif turn_data["action"]["action"] == "right":
-        move_positions.append((attack_y, attack_x-1))  # プロット時は(y, x)順
-    elif turn_data["action"]["action"] == "left":
-        move_positions.append((attack_y, attack_x+1))  # プロット時は(y, x)順
-    elif turn_data["action"]["action"] == "down":
-        move_positions.append((attack_y-1, attack_x))  # プロット時は(y, x)順
-    elif turn_data["action"]["action"] == "up":
-        move_positions.append((attack_y+1, attack_x))  # プロット時は(y, x)順
+    if attacker_name is not None:
+        # アクションを実行したロボットの座標を取得
+        attack_x, attack_y = robot_positions[attacker_name]
+        # アクションが攻撃である場合、攻撃範囲を設定
+        if turn_data["action"]["action"] == "attack":
+            # 四方1マスの範囲を攻撃範囲として設定
+            for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                nx, ny = attack_x + dx, attack_y + dy
+                if 0 <= nx < x_max and 0 <= ny < y_max:
+                    attack_positions.append((ny, nx))  # プロット時は(y, x)順
+        elif turn_data["action"]["action"] == "rest":
+            rest_positions.append((attack_y, attack_x))  # プロット時は(y, x)順
+        elif turn_data["action"]["action"] == "right":
+            move_positions.append((attack_y, attack_x-1))  # プロット時は(y, x)順
+        elif turn_data["action"]["action"] == "left":
+            move_positions.append((attack_y, attack_x+1))  # プロット時は(y, x)順
+        elif turn_data["action"]["action"] == "down":
+            move_positions.append((attack_y-1, attack_x))  # プロット時は(y, x)順
+        elif turn_data["action"]["action"] == "up":
+            move_positions.append((attack_y+1, attack_x))  # プロット時は(y, x)順
 
     # 盤面を画像としてプロット
     plt.figure(figsize=(6, 6))
@@ -113,21 +116,22 @@ def draw_board_v2(turn_data, x_max, y_max, title='', is_show=True):
 
     # アクションの処理
     attacker_name = turn_data["action"]["robot_name"]
-    attack_x, attack_y = robot_positions[attacker_name]
-    action_type = turn_data["action"]["action"]
+    if attacker_name is not None:
+        attack_x, attack_y = robot_positions[attacker_name]
+        action_type = turn_data["action"]["action"]
 
-    if action_type == "attack":
-        for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+        if action_type == "attack":
+            for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                nx, ny = attack_x + dx, attack_y + dy
+                if 0 <= nx < x_max and 0 <= ny < y_max:
+                    add_image_to_plot(ax, attack_img, nx, ny, zoom=0.9)
+        elif action_type == "rest":
+            add_image_to_plot(ax, rest_img, attack_x, attack_y, zoom=0.9)
+        elif action_type in ["right", "left", "down", "up"]:
+            dx, dy = {"right": (-1, 0), "left": (1, 0), "down": (0, -1), "up": (0, 1)}[action_type]
             nx, ny = attack_x + dx, attack_y + dy
             if 0 <= nx < x_max and 0 <= ny < y_max:
-                add_image_to_plot(ax, attack_img, nx, ny, zoom=0.9)
-    elif action_type == "rest":
-        add_image_to_plot(ax, rest_img, attack_x, attack_y, zoom=0.9)
-    elif action_type in ["right", "left", "down", "up"]:
-        dx, dy = {"right": (-1, 0), "left": (1, 0), "down": (0, -1), "up": (0, 1)}[action_type]
-        nx, ny = attack_x + dx, attack_y + dy
-        if 0 <= nx < x_max and 0 <= ny < y_max:
-            add_image_to_plot(ax, move_img, nx, ny, zoom=0.9)
+                add_image_to_plot(ax, move_img, nx, ny, zoom=0.9)
 
     if title:
         ax.set_title(title)

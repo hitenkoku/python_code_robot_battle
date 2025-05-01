@@ -5,6 +5,7 @@ import traceback
 
 from controller import GameController
 from robot import Robot
+from draw import draw_board_v2 as draw_board
 
 st.set_page_config(layout="wide")
 
@@ -55,8 +56,8 @@ for k, v in session_defaults.items():
 # ------------------------------------------------------------------------
 if "controller" not in st.session_state:
     controller = GameController()
-    player     = Robot("Player Robot",   1, 3, None, controller)
-    enemy      = Robot("Opponent Robot", 7, 3, None, controller)
+    player     = Robot("Robot A",   1, 3, None, controller)
+    enemy      = Robot("Robot B", 7, 3, None, controller)
     controller.set_robots(player, enemy)
 
     st.session_state["controller"]     = controller
@@ -71,6 +72,19 @@ else:
 # 画面レイアウト
 # ------------------------------------------------------------------------
 st.title("Robot Logic Editor")
+
+# 現在のゲームの状況を描画
+if controller.game_state:
+    settings = controller.game_state[0]['settings']
+    x_max = settings['x_max']
+    y_max = settings['y_max']
+
+    current_turn_data = controller.game_state[-1]
+    if "robots" in current_turn_data:
+        fig_placeholder = st.empty()  # プレースホルダーを作成
+        fig = draw_board(current_turn_data, x_max, y_max, title="Current Game State", is_show=False)
+        fig_placeholder.pyplot(fig, use_container_width=True)
+
 left_col, right_col = st.columns(2)
 
 # ------------------------------------------------------------------------
@@ -124,6 +138,7 @@ with right_col:
     if st.session_state["show_initial_state"]:
         st.subheader("Initial Game State")
         st.write(controller.game_state[0])
+        st.write(controller.game_state[-1])
 
     # ----------------- ゲーム終了判定 -----------------
     if player.hp <= 0 or enemy.hp <= 0:
@@ -189,6 +204,13 @@ with right_col:
             st.write("Game State after Opponent:", controller.game_state[-1])
         else:
             st.warning("No valid game_info for Opponent ‒ turn skipped.")
+
+        # 再描画処理
+        if controller.game_state:
+            current_turn_data = controller.game_state[-1]
+            if "robots" in current_turn_data:
+                fig = draw_board(current_turn_data, x_max, y_max, title="Current Game State", is_show=False)
+                fig_placeholder.pyplot(fig, use_container_width=True)  # 上部の画像を更新
 
     # ----------------- 直前の敵アクション -----------------
     if st.session_state["last_opponent_action"] is not None:

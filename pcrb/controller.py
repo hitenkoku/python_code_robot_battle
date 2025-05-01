@@ -5,7 +5,7 @@ from utils import is_valid_memo
 
 class GameController:
     def __init__(
-            self, max_turn=100, x_max=9, y_max=9, robot1_initial_position=None, robot2_initial_position=None):
+            self, max_turn=100, x_max=9, y_max=7, robot1_initial_position=None, robot2_initial_position=None):
         self.robot1 = None
         self.robot2 = None
         self.memos1 = None
@@ -32,6 +32,7 @@ class GameController:
         self.robot2 = robot2
         self.memos1 = []
         self.memos2 = []
+        self.save_game_state(None, None)
 
     def log_action(self, turn, message):
         print(message)
