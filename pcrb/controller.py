@@ -33,6 +33,7 @@ class GameController:
         self.memos1 = []
         self.memos2 = []
         self.save_game_state(None, None)
+        self.turn += 1
 
     def log_action(self, turn, message):
         print(message)
