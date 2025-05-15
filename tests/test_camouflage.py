@@ -9,9 +9,9 @@ from controller import GameController
 def robot_logic(robot, game_info, memos):
     """テスト用ロジック: 最初のターンでカモフラージュを使用し、次のターンで右に移動"""
     print("game_info['turn'] :", game_info['turn'])
-    if game_info['turn'] == 0 and robot.sp >= 20 and not robot.camouflage.is_active:
+    if game_info['turn'] == 1 and robot.sp >= 20 and not robot.camouflage.is_active:
         return "camouflage"
-    elif game_info['turn'] == 1:
+    elif game_info['turn'] == 2:
         return "right"
     return "rest"
 
