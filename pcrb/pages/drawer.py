@@ -12,15 +12,15 @@ def st_draw_board(data):
     turn_button_holder = st.empty()
     board_holder = st.empty()
     robots_holder = st.empty()
-    memo_holder = st.empty()
+    # memo_holder = st.empty()
 
     settings = data[0]['settings']
-    max_turn = settings['max_turn']
+    # max_turn = settings['max_turn']
     x_max = settings['x_max']
     y_max = settings['y_max']
 
-    memo_holder.write(max_turn)
-    st.sidebar.write("Debug info:", data)
+    # memo_holder.write(max_turn)
+    # st.sidebar.write("Debug info:", data)
     all_turn_data = data[1:]
 
     # Initialize session state for the current turn
@@ -28,24 +28,34 @@ def st_draw_board(data):
         st.session_state.current_turn = 0
 
     # Slider for selecting turn
-    turn_id = turn_slider_holder.slider("TURN", 0, all_turn_data[-1]['turn'], st.session_state.current_turn)
-    st.session_state.current_turn = turn_id
+    max_turn = all_turn_data[-1]['turn']
 
     # Next and Back buttons
     col1, col2, _ = turn_button_holder.columns([1, 1, 2])
     with col1:
-        if st.button("Back"):
-            if st.session_state.current_turn > 0:
-                st.session_state.current_turn -= 1
-
+        back_clicked = st.button("Back", key="btn_back", use_container_width=True)
     with col2:
-        if st.button("Next"):
-            if st.session_state.current_turn < all_turn_data[-1]['turn']:
-                st.session_state.current_turn += 1
+        next_clicked = st.button("Next", key="btn_next", use_container_width=True)
+
+    if back_clicked:
+        st.session_state.current_turn = max(
+            0, st.session_state.current_turn - 1
+        )
+    if next_clicked:
+        st.session_state.current_turn = min(
+            max_turn, st.session_state.current_turn + 1
+        )
+
+    # ---------- スライダー ----------
+    turn_slider_holder.slider(
+        "TURN",
+        0,
+        max_turn,
+        key="current_turn"
+    )
 
     # Sync slider with button actions
     turn_id = st.session_state.current_turn
-    st.sidebar.write("Debug info:", turn_id)
     turn_data = all_turn_data[turn_id]
 
     _action = turn_data['action']
