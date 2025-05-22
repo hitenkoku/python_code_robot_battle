@@ -107,65 +107,65 @@ def draw_board(turn_data: dict, x_max: int, y_max: int, *, title: str = "", is_s
     # --------------------------------------------------
     # アクション内容に応じて対象マスを収集
     # --------------------------------------------------
-    attacker_name = turn_data["action"]["robot_name"]
-    if attacker_name is not None:
-        attack_x, attack_y = robot_positions[attacker_name]
+    player_name = turn_data["action"]["robot_name"]
+    if player_name is not None:
+        robot_x, robot_y = robot_positions[player_name]
         action_type = turn_data["action"]["action"]
 
         # --- 近接攻撃 (距離1、フォン・ノイマン近傍)
         if action_type == "attack":
             for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-                nx, ny = attack_x + dx, attack_y + dy
+                nx, ny = robot_x + dx, robot_y + dy
                 if 0 <= nx < x_max and 0 <= ny < y_max:
                     markers["attack"].append((ny, nx))
 
         # --- 休憩 (スタミナ回復)
         elif action_type == "rest":
-            markers["rest"].append((attack_y, attack_x))
+            markers["rest"].append((robot_y, robot_x))
 
         # --- 移動 (ハイライトは移動先)
         elif action_type in {"right", "left", "down", "up"}:
             dx, dy = _direction_offset(action_type)
-            nx, ny = attack_x + dx, attack_y + dy
+            nx, ny = robot_x + dx, robot_y + dy
             if 0 <= nx < x_max and 0 <= ny < y_max:
                 markers["move"].append((ny, nx))
 
         # --- 防御 (被ダメ軽減)
         elif action_type == "defend":
-            markers["defend"].append((attack_y, attack_x))
+            markers["defend"].append((robot_y, robot_x))
 
         # --- パリィ (事前カウンター)
         elif action_type == "parry":
-            markers["parry"].append((attack_y, attack_x))
+            markers["parry"].append((robot_y, robot_x))
 
         # --- 遠距離攻撃 (マンハッタン距離2)
         elif action_type == "ranged_attack":
-            for dx, dy in [(-2, 0), (2, 0), (0, -2), (0, 2)]:
-                nx, ny = attack_x + dx, attack_y + dy
+            for dx, dy in [(-2, 0), (2, 0), (0, -2), (0, 2), (1, 1), (-1, -1), (1, -1), (-1, 1)]:
+                nx, ny = robot_x + dx, robot_y + dy
                 if 0 <= nx < x_max and 0 <= ny < y_max:
                     markers["ranged_attack"].append((ny, nx))
 
         # --- 罠 (隣接マス設置)
         elif action_type.startswith("trap_"):
             dx, dy = _direction_offset(action_type)
-            nx, ny = attack_x + dx, attack_y + dy
+            nx, ny = robot_x + dx, robot_y + dy
             if 0 <= nx < x_max and 0 <= ny < y_max:
                 markers["trap"].append((ny, nx))
 
         # --- スティール / テレポート
         elif action_type == "steal":
             for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-                nx, ny = attack_x + dx, attack_y + dy
+                nx, ny = robot_x + dx, robot_y + dy
                 if 0 <= nx < x_max and 0 <= ny < y_max:
                     markers["steal"].append((ny, nx))
         elif action_type == "teleport":
-            markers["teleport"].append((attack_y, attack_x))
+            markers["teleport"].append((robot_y, robot_x))
 
         # --- カモフラージュ & スキャン (ロボット自身を表示)
         elif action_type == "camouflage":
-            markers["camouflage"].append((attack_y, attack_x))
+            markers["camouflage"].append((robot_y, robot_x))
         elif action_type == "scan":
-            markers["scan"].append((attack_y, attack_x))
+            markers["scan"].append((robot_y, robot_x))
 
     # --------------------------------------------------
     # ボードを描画
@@ -277,9 +277,9 @@ def draw_board_v2(
     # ----------------------------------------------------------------------
     # アクション可視化
     # ----------------------------------------------------------------------
-    attacker_name = turn_data["action"]["robot_name"]
-    if attacker_name is not None:
-        attack_x, attack_y = robot_positions[attacker_name]
+    player_name = turn_data["action"]["robot_name"]
+    if player_name is not None:
+        robot_x, robot_y = robot_positions[player_name]
         action_type = turn_data["action"]["action"]
 
         # ボード範囲内判定ヘルパ
@@ -289,61 +289,61 @@ def draw_board_v2(
         # --- 近接攻撃
         if action_type == "attack":
             for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-                nx, ny = attack_x + dx, attack_y + dy
+                nx, ny = robot_x + dx, robot_y + dy
                 if _in_field(nx, ny):
                     add_image_to_plot(ax, sprites["attack"], nx, ny, zoom=0.9, fallback_color="red")
 
         # --- 休憩
         elif action_type == "rest":
-            add_image_to_plot(ax, sprites["rest"], attack_x, attack_y, zoom=0.9, fallback_color="green")
+            add_image_to_plot(ax, sprites["rest"], robot_x, robot_y, zoom=0.9, fallback_color="green")
 
         # --- 移動
         elif action_type in {"right", "left", "down", "up"}:
             dx, dy = _direction_offset(action_type)
-            nx, ny = attack_x + dx, attack_y + dy
+            nx, ny = robot_x + dx, robot_y + dy
             if _in_field(nx, ny):
                 add_image_to_plot(ax, sprites["move"], nx, ny, zoom=0.9, fallback_color="black")
 
         # --- 防御
         elif action_type == "defend":
-            add_image_to_plot(ax, sprites["defend"], attack_x, attack_y, zoom=0.9, fallback_color="yellow")
+            add_image_to_plot(ax, sprites["defend"], robot_x, robot_y, zoom=0.9, fallback_color="yellow")
 
         # --- パリィ
         elif action_type == "parry":
-            add_image_to_plot(ax, sprites["parry"], attack_x, attack_y, zoom=0.9, fallback_color="cyan")
+            add_image_to_plot(ax, sprites["parry"], robot_x, robot_y, zoom=0.9, fallback_color="cyan")
 
         # --- 遠距離攻撃
         elif action_type == "ranged_attack":
-            for dx, dy in [(-2, 0), (2, 0), (0, -2), (0, 2)]:
-                nx, ny = attack_x + dx, attack_y + dy
+            for dx, dy in [(-2, 0), (2, 0), (0, -2), (0, 2), (1, 1), (-1, -1), (1, -1), (-1, 1)]:
+                nx, ny = robot_x + dx, robot_y + dy
                 if _in_field(nx, ny):
                     add_image_to_plot(ax, sprites["ranged_attack"], nx, ny, zoom=0.9, fallback_color="orange")
 
         # --- 罠設置
         elif action_type.startswith("trap_"):
             dx, dy = _direction_offset(action_type)
-            nx, ny = attack_x + dx, attack_y + dy
+            nx, ny = robot_x + dx, robot_y + dy
             if _in_field(nx, ny):
                 add_image_to_plot(ax, sprites["trap"], nx, ny, zoom=0.9, fallback_color="purple")
 
         # --- スティール
         elif action_type == "steal":
             for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-                nx, ny = attack_x + dx, attack_y + dy
+                nx, ny = robot_x + dx, robot_y + dy
                 if _in_field(nx, ny):
                     add_image_to_plot(ax, sprites["steal"], nx, ny, zoom=0.9, fallback_color="magenta")
 
         # --- テレポート
         elif action_type == "teleport":
-            add_image_to_plot(ax, sprites["teleport"], attack_x, attack_y, zoom=0.9, fallback_color="brown")
+            add_image_to_plot(ax, sprites["teleport"], robot_x, robot_y, zoom=0.9, fallback_color="brown")
 
         # --- カモフラージュ
         elif action_type == "camouflage":
-            add_image_to_plot(ax, sprites["camouflage"], attack_x, attack_y, zoom=0.9, fallback_color="grey")
+            add_image_to_plot(ax, sprites["camouflage"], robot_x, robot_y, zoom=0.9, fallback_color="grey")
 
         # --- スキャン
         elif action_type == "scan":
-            add_image_to_plot(ax, sprites["scan"], attack_x, attack_y, zoom=0.9, fallback_color="blue")
+            add_image_to_plot(ax, sprites["scan"], robot_x, robot_y, zoom=0.9, fallback_color="blue")
 
     # ----------------------------------------------------------------------
     # タイトル／表示
