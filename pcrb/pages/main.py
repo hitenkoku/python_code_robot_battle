@@ -17,7 +17,8 @@ def main() -> None:
     st.set_page_config(page_title="PCRB", page_icon="🤖", layout="centered")
 
     # --- ヘッダー ---
-    st.title("🤖 PCRB - Python Code Robot Battle")
+    st.title("🤖 PCRB - PythonCodeRobotBattle")
+    st.image("./pcrb/asset/title.png", use_container_width=True)
     st.caption("Python スクリプトでロボットを動かして対戦しよう！")
     st.write("---")
 

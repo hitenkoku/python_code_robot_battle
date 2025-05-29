@@ -31,7 +31,7 @@ INTRODUCTION_DOCUMENT = '''
 
 
 TUTORIAL_DOCUMENT = '''
-## 1. APPページからサンプルの入手
+## 1. Homeページからサンプルの入手
 
 「Download sample robot logic file」を選択して、
 下記のようなロジックファイルのサンプルを入手する
@@ -85,13 +85,13 @@ def robot_logic(robot, game_info, memos):
 
 ## 3. ロジックファイルをアップロード
 
-APPページの「Upload a Python file with robot_logic function」蘭の「Drag and drop file here」に
+Homeページの「Upload a Python file with robot_logic function」蘭の「Drag and drop file here」に
 作成したロジックが記載されているPythonファイルをアップロードする。
 
 ## 4. 対戦ログの確認
 
 「3. ロジックファイルをアップロード」後に、
-APPページの「Download game_state.json」を選択し、対戦ログを確認します。
+Homeページの「Download game_state.json」を選択し、対戦ログを確認します。
 
 ## 5. ロジックを改良して、再度アップロード
 
