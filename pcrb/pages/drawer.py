@@ -71,7 +71,8 @@ def st_draw_board(data):
 
 
 def main():
-    st.title("Python Code Robot Battle")
+    st.title("Drawer Page") 
+    st.caption("対戦ログをアップロードして、ボードを描画します。")
     uploaded_file = st.file_uploader("Upload game_state.json", type="json")
 
     if uploaded_file is not None:

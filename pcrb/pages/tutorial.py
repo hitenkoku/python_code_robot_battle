@@ -1,9 +1,37 @@
 import streamlit as st
 
-DOCUMENT = '''
-# チュートリアル
+INTRODUCTION_DOCUMENT = '''
+## どんなゲーム？
 
-## 1. APPページからサンプルの入手
+このゲームは、ロボット同士が戦うターン制の戦略ゲームです。
+- 相手のロボットを倒すことが目的です。
+- ゲームは、ターン制で進行し、各ターンごとにロボットの行動が決定されます。
+
+## プレイヤーのすること
+
+プレイヤーは、ロボットの行動を決定するためのロジックをPythonで実装します。
+- ロジックは、ロボットの状態や相手の位置に基づいて行動を決定します。
+- プレイヤーは、ロジックを実装したPythonファイルをアップロードし、ゲームを開始します。
+
+## ゲームの流れ
+
+1. プレイヤーは、ロジックを実装したPythonファイルをアップロードします。
+2. ゲームが開始され、ロボットの行動がターンごとに決定されます。
+3. 各ターンごとに、ロボットの状態や相手の位置が更新されます。
+5. ゲームは、相手のロボットのHPが0になるまで続きます。
+
+## ロジックの実装
+
+ロジックは、`robot_logic`という関数を実装することで決定されます。
+- この関数は、ロボットの状態や相手の位置を引数として受け取り、ロボットの行動を決定します。
+- ロジックは、ロボットのHPやSP、相手の位置に基づいて行動を決定します。
+- ロジックは、ロボットの行動を決定するための条件分岐やループを使用することができます。
+
+'''
+
+
+TUTORIAL_DOCUMENT = '''
+## 1. Homeページからサンプルの入手
 
 「Download sample robot logic file」を選択して、
 下記のようなロジックファイルのサンプルを入手する
@@ -57,13 +85,13 @@ def robot_logic(robot, game_info, memos):
 
 ## 3. ロジックファイルをアップロード
 
-APPページの「Upload a Python file with robot_logic function」蘭の「Drag and drop file here」に
+Homeページの「Upload a Python file with robot_logic function」蘭の「Drag and drop file here」に
 作成したロジックが記載されているPythonファイルをアップロードする。
 
 ## 4. 対戦ログの確認
 
 「3. ロジックファイルをアップロード」後に、
-APPページの「Download game_state.json」を選択し、対戦ログを確認します。
+Homeページの「Download game_state.json」を選択し、対戦ログを確認します。
 
 ## 5. ロジックを改良して、再度アップロード
 
@@ -73,9 +101,11 @@ APPページの「Download game_state.json」を選択し、対戦ログを確�
 
 
 def main():
-    # ページタイトル
+    st.title("Introduction")
+    st.markdown(INTRODUCTION_DOCUMENT)
+    
     st.title("Tutorial")
-    st.markdown(DOCUMENT)
+    st.markdown(TUTORIAL_DOCUMENT)
 
 
 if __name__ == '__main__':

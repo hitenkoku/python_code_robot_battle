@@ -8,7 +8,7 @@ from pcrb.controller import GameController
 
 def robot_logic(robot, game_info, memos):
     """テスト用ロジック: スキャンを使用"""
-    if game_info['turn'] == 1:
+    if game_info['turn'] == 2:
         assert 'enemy_sp' in game_info
         assert 'enemy_traps' in game_info
 

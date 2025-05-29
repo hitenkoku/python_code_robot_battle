@@ -61,17 +61,23 @@ def battle_with_saved_robots(player_robot_logic):
             module = importlib.import_module(f"robots.{module_name}")
             if hasattr(module, "robot_logic"):
                 enemy_robot_logic = getattr(module, "robot_logic")
+
+                # 先攻: プレイヤーロボット vs 敵ロボット
                 winner, game_state = play_game(player_robot_logic, enemy_robot_logic)
                 result, color = determine_result(winner)
-
-                # game_state を JSON 文字列に変換
                 game_state_json = json.dumps(game_state, indent=4)
-
-                # Base64 エンコードしてダウンロードリンクを生成
                 b64 = base64.b64encode(game_state_json.encode()).decode()
-                download_link = f'<a href="data:application/json;base64,{b64}" download="{module_name}_log.json">Download</a>'
+                download_link = f'<a href="data:application/json;base64,{b64}" download="{module_name}_log_first.json">Download</a>'
+                results.append((module_name + " (プレイヤー:先攻)", f'<span style="color:{color}; font-weight:bold;">{result}</span>', download_link))
 
-                results.append((module_name, f'<span style="color:{color}; font-weight:bold;">{result}</span>', download_link))
+                # 後攻: 敵ロボット vs プレイヤーロボット
+                winner, game_state = play_game(enemy_robot_logic, player_robot_logic)
+                result, color = determine_result(winner)
+                game_state_json = json.dumps(game_state, indent=4)
+                b64 = base64.b64encode(game_state_json.encode()).decode()
+                download_link = f'<a href="data:application/json;base64,{b64}" download="{module_name}_log_second.json">Download</a>'
+                results.append((module_name + " (プレイヤー:後攻)", f'<span style="color:{color}; font-weight:bold;">{result}</span>', download_link))
+
         except Exception as e:
             st.warning(f"Error loading robot module {module_name}: {traceback.format_exc()}")
             continue
