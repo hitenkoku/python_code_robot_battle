@@ -64,7 +64,7 @@ def battle_with_saved_robots(player_robot_logic):
 
                 # 先攻: プレイヤーロボット vs 敵ロボット
                 winner, game_state = play_game(player_robot_logic, enemy_robot_logic)
-                result, color = determine_result(winner)
+                result, color = determine_result(winner, player_robot_name="Robot A", enemy_robot_name="Robot B")
                 game_state_json = json.dumps(game_state, indent=4)
                 b64 = base64.b64encode(game_state_json.encode()).decode()
                 download_link = f'<a href="data:application/json;base64,{b64}" download="{module_name}_log_first.json">Download</a>'
@@ -72,7 +72,7 @@ def battle_with_saved_robots(player_robot_logic):
 
                 # 後攻: 敵ロボット vs プレイヤーロボット
                 winner, game_state = play_game(enemy_robot_logic, player_robot_logic)
-                result, color = determine_result(winner)
+                result, color = determine_result(winner, player_robot_name="Robot B", enemy_robot_name="Robot A")
                 game_state_json = json.dumps(game_state, indent=4)
                 b64 = base64.b64encode(game_state_json.encode()).decode()
                 download_link = f'<a href="data:application/json;base64,{b64}" download="{module_name}_log_second.json">Download</a>'
@@ -85,11 +85,11 @@ def battle_with_saved_robots(player_robot_logic):
     return results
 
 
-def determine_result(winner):
+def determine_result(winner, player_robot_name="Robot A", enemy_robot_name="Robot B"):
     """勝敗結果を判定する"""
-    if winner.name == "Robot A":
+    if winner.name == player_robot_name:
         return "勝利 🏆", "green"
-    elif winner.name == "Robot B":
+    elif winner.name == enemy_robot_name:
         return "敗北 ❌", "red"
     else:
         return "引き分け ⚖️", "gray"
