@@ -122,6 +122,25 @@ def display_results(results):
 
 def main():
     st.title("Robot Battle Page")
+
+    st.write("---")
+
+    st.markdown(
+        """
+        このページでは、アップロードしたロジックファイルを使用してロボット同士の対戦を行います。
+        登録済みのロボットと連戦し、対戦結果を表示します。
+
+        対戦結果は、先攻と後攻の両方で表示されます。各対戦の結果は、勝利、敗北、引き分けのいずれかになります。
+        対戦結果は、勝利数と総試合数を含む表形式で表示されます。
+        対戦結果のログは、JSON形式でダウンロード可能です。
+
+        Robot A が先攻、Robot B が後攻として対戦します。
+        """
+    )
+
+    st.write("---")
+
+    st.subheader("ロジックファイルのアップロード")
     file_content = upload_and_display_file()
 
     if file_content and validate_code(file_content):
