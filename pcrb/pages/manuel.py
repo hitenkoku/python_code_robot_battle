@@ -37,6 +37,11 @@ def robot_logic(robot, game_info, memos):
 - **戻り値**:
   - ロボットの行動を指示するコマンド（例: `"attack"`, `"rest"`）。
 
+### 関数内で利用できるライブラリ
+
+- `random`: ランダムな動きを生成するために使用できます。
+- `math`: 数学的な計算を行うために使用できます。
+
 ## ゲームの進め方
 1. **ロジックの実装**
     - `robot_logic` 関数を作成し、ロボットの行動を決定します。
@@ -118,7 +123,88 @@ def robot_logic(robot, game_info, memos):
 - **持続時間**: 1ターン
 - **robot_logic の返却値**: `'scan'`
 
-楽しんでプレイしてください！
+# ログ情報
+
+## ログのフォーマット
+
+- ログは以下の形式で記録されます。
+
+```json
+[
+    {
+        "settings": {
+            "max_turn": 100,
+            "x_max": 9,
+            "y_max": 7
+        }
+    },
+    {
+        "turn": 0,
+        "robots": [
+            {
+                "name": "Robot A",
+                "position": [
+                    1,
+                    3
+                ],
+                "hp": 100,
+                "sp": 50,
+                "defense_mode": false
+            },
+            {
+                "name": "Robot B",
+                "position": [
+                    7,
+                    3
+                ],
+                "hp": 100,
+                "sp": 50,
+                "defense_mode": false
+            }
+        ],
+        "action": {
+            "robot_name": null,
+            "action": null
+        }
+    },
+    {
+        "turn": 1,
+        "robots": [
+            {
+                "name": "Robot A",
+                "position": [
+                    1,
+                    3
+                ],
+                "hp": 100,
+                "sp": 50,
+                "defense_mode": false
+            },
+            {
+                "name": "Robot B",
+                "position": [
+                    6,
+                    3
+                ],
+                "hp": 100,
+                "sp": 45,
+                "defense_mode": false
+            }
+        ],
+        "action": {
+            "robot_name": "Robot B",
+            "action": "left"
+        }
+    },
+```
+
+## ログの説明
+
+- `settings`: ゲームの設定情報（最大ターン数、ボードのサイズなど）。
+- `turn`: 現在のターン数。
+- `robots`: 各ロボットの情報（名前、位置、HP、SP、防御モードの状態）。
+- `action`: 現在のターンでのロボットの行動（どのロボットがどのアクションを実行したか）。
+
 '''
 
 
