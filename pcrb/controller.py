@@ -93,6 +93,7 @@ class GameController:
 
         if robot.stun_counter > 0:
             print(f"DEBUG: Stunned. Returning ('stun', {{}})")
+
             return "stun", {} # スタン時も2つの値を返す
 
         robot.start_turn()
