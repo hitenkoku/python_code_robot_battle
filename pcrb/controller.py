@@ -8,8 +8,8 @@ class GameController:
             self, max_turn=100, x_max=9, y_max=7, robot1_initial_position=None, robot2_initial_position=None):
         self.robot1 = None
         self.robot2 = None
-        self.memos1 = None
-        self.memos2 = None
+        self.memos1 = {}
+        self.memos2 = {}
         self.turn = 0
         self.max_turn = max_turn
         self.x_max = x_max
@@ -30,8 +30,8 @@ class GameController:
     def set_robots(self, robot1, robot2):
         self.robot1 = robot1
         self.robot2 = robot2
-        self.memos1 = []
-        self.memos2 = []
+        self.memos1 = {}
+        self.memos2 = {}
         self.save_game_state(None, None)
         self.turn += 1
 
@@ -73,6 +73,7 @@ class GameController:
         game_info = self.build_game_info(robot)
 
         response = robot.robot_logic(robot, game_info, memos)
+        print(f"DEBUG: response from robot_logic: {response}, type: {type(response)}")
 
         if isinstance(response, str):
             action = response
@@ -81,17 +82,18 @@ class GameController:
             action, memo = response
             assert is_valid_memo(memo)
         else:
-            assert False
+            assert False, f"Unexpected response format from robot_logic: {response} (type: {type(response)})"
 
         action = adjust_action(action)
 
         if robot == self.robot1:
-            self.memos1.append(memo)
+            self.memos1.update(memo)
         else:
-            self.memos2.append(memo)
+            self.memos2.update(memo)
 
         if robot.stun_counter > 0:
-            return "stun"
+            print(f"DEBUG: Stunned. Returning ('stun', {{}})")
+            return "stun", {} # スタン時も2つの値を返す
 
         robot.start_turn()
         if action == "rest":
@@ -120,6 +122,7 @@ class GameController:
             print(f"Invalid action: {action}")
             raise ValueError("Unexpected robot action detected!")
 
+        print(f"DEBUG: Returning action: {action} (type: {type(action)}), memo: {memo} (type: {type(memo)})")
         return action, memo
 
     def save_game_state(self, robot_name, action):
@@ -151,7 +154,7 @@ class GameController:
 
     def game_loop(self):
         while self.robot1.is_alive() and self.robot2.is_alive() and self.turn < self.max_turn:
-            current_robot = self.robot1 if self.turn % 2 == 0 else self.robot2
+            current_robot = self.robot1 if self.turn % 2 != 0 else self.robot2 # Robot1 (A) が先攻になるように変更
             self.log_action(self.turn, f"\n--- Turn {self.turn} : {current_robot.name} turn ---")
             action, _ = self.run_logic(current_robot)
             self.save_game_state(current_robot.name, action)  # 各ターンごとの状態を保存
@@ -200,8 +203,8 @@ class GameController:
 
         # 1) ターンとメモをクリア
         self.turn   = 0
-        self.memos1 = []
-        self.memos2 = []
+        self.memos1 = {}
+        self.memos2 = {}
 
         # 2) ロボットを初期位置・初期ステータスに戻す
         for robot, init_pos in (
