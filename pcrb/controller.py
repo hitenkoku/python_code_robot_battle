@@ -8,8 +8,8 @@ class GameController:
             self, max_turn=100, x_max=9, y_max=7, robot1_initial_position=None, robot2_initial_position=None):
         self.robot1 = None
         self.robot2 = None
-        self.memos1 = None
-        self.memos2 = None
+        self.memos1 = {}
+        self.memos2 = {}
         self.turn = 0
         self.max_turn = max_turn
         self.x_max = x_max
@@ -30,8 +30,8 @@ class GameController:
     def set_robots(self, robot1, robot2):
         self.robot1 = robot1
         self.robot2 = robot2
-        self.memos1 = []
-        self.memos2 = []
+        self.memos1 = {}
+        self.memos2 = {}
         self.save_game_state(None, None)
         self.turn += 1
 
@@ -86,12 +86,12 @@ class GameController:
         action = adjust_action(action)
 
         if robot == self.robot1:
-            self.memos1.append(memo)
+            self.memos1.update(memo)
         else:
-            self.memos2.append(memo)
+            self.memos2.update(memo)
 
         if robot.stun_counter > 0:
-            return "stun"
+            return "stun", {} # スタン時も2つの値を返す
 
         robot.start_turn()
         if action == "rest":
@@ -200,8 +200,8 @@ class GameController:
 
         # 1) ターンとメモをクリア
         self.turn   = 0
-        self.memos1 = []
-        self.memos2 = []
+        self.memos1 = {}
+        self.memos2 = {}
 
         # 2) ロボットを初期位置・初期ステータスに戻す
         for robot, init_pos in (
