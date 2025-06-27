@@ -91,7 +91,7 @@ class GameController:
             self.memos2.update(memo)
 
         if robot.stun_counter > 0:
-            return "stun"
+            return "stun", {} # スタン時も2つの値を返す
 
         robot.start_turn()
         if action == "rest":
