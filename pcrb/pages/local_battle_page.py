@@ -20,11 +20,11 @@ def upload_robot_logic(label: str):
     安全であれば、モジュールとしてロードし、robot_logic関数を返します。
     エラーが発生した場合はNoneを返します。
     """
-    uploaded_file = st.file_uploader(label, type=["py"])
+    uploaded_file = st.file_uploader(label, type=["py"], key=f"uploader_{label.replace(' ', '_')}") # Add unique key
     if uploaded_file:
         file_content = uploaded_file.read().decode("utf-8")
-        st.subheader(f"Uploaded Code for {label}")
-        st.code(file_content, language="python")
+        with st.expander(f"View Uploaded Code for {label}", expanded=False):
+            st.code(file_content, language="python")
 
         is_safe, message = is_safe_code(file_content)
         if not is_safe:
@@ -65,12 +65,17 @@ def main():
     )
     st.write("---")
 
-    # --- ロボットロジックのアップロード ---
-    st.subheader("🤖 Robot 1 (Player 1)")
-    robot1_logic, robot1_code = upload_robot_logic("Upload Robot 1 Logic (.py)")
+    # --- ロボットロジックのアップロード (2段組) ---
+    col1, col2 = st.columns(2)
+    with col1:
+        st.subheader("🤖 Robot 1 (Player 1)")
+        robot1_logic, robot1_code = upload_robot_logic("Upload Robot 1 Logic (.py)")
 
-    st.subheader("🤖 Robot 2 (Player 2)")
-    robot2_logic, robot2_code = upload_robot_logic("Upload Robot 2 Logic (.py)")
+    with col2:
+        st.subheader("🤖 Robot 2 (Player 2)")
+        robot2_logic, robot2_code = upload_robot_logic("Upload Robot 2 Logic (.py)")
+
+    st.write("---") # Add a separator
 
     # --- 対戦回数の入力 ---
     st.subheader("⚔️ Battle Rounds")
