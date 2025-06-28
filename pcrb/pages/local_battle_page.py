@@ -5,6 +5,8 @@ import traceback
 import pandas as pd
 import json
 import base64
+import io # For BytesIO
+import zipfile # For ZipFile
 
 import sys
 sys.path.append('./pcrb') # Execute from the root directory.
@@ -159,6 +161,26 @@ def main():
         results_df = pd.DataFrame(display_data)
         # Use st.markdown to render DataFrame with HTML links
         st.markdown(results_df[["Round", "Winner", "Log"]].to_html(escape=False, index=False), unsafe_allow_html=True)
+
+        st.write("---") # Separator
+
+        # --- 全ログ一括ダウンロードボタン ---
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
+            for res in st.session_state.local_battle_results:
+                log_filename = f"local_battle_round_{res['Round']}_log.json"
+                # Add file to zip, data is game_state as json string
+                game_state_json_str = json.dumps(res["game_state"], ensure_ascii=False, indent=4)
+                zip_file.writestr(log_filename, game_state_json_str)
+
+        zip_buffer.seek(0) # Reset buffer position to the beginning
+        st.download_button(
+            label="Download All Logs (ZIP)",
+            data=zip_buffer,
+            file_name="local_battle_all_logs.zip",
+            mime="application/zip",
+            key="download_all_logs_zip"
+        )
 
 
 if __name__ == "__main__":
