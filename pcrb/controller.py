@@ -77,24 +77,25 @@ class GameController:
 
         if isinstance(response, str):
             action = response
-            memo = {}
+            # memo = {} # 仕様変更により削除
         elif isinstance(response, (list, tuple)) and len(response) == 2:
-            action, memo = response
-            assert is_valid_memo(memo)
+            # action, memo = response # 仕様変更により変更
+            assert is_valid_memo(response[1]) # memo を response[1] に変更
         else:
             assert False, f"Unexpected response format from robot_logic: {response} (type: {type(response)})"
 
-        action = adjust_action(action)
+        action = adjust_action(response[0] if isinstance(response, (list, tuple)) else response) # responseがタプルやリストの場合、最初の要素をactionとする
 
-        if robot == self.robot1:
-            self.memos1.update(memo)
-        else:
-            self.memos2.update(memo)
+        if isinstance(response, (list, tuple)) and len(response) == 2: # memoの更新はresponseがタプルやリストで要素数が2の場合のみ
+            if robot == self.robot1:
+                self.memos1.append(response[1]) # dictのupdateからlistのappendに変更
+            else:
+                self.memos2.append(response[1]) # dictのupdateからlistのappendに変更
 
         if robot.stun_counter > 0:
-            print(f"DEBUG: Stunned. Returning ('stun', {{}})")
+            print(f"DEBUG: Stunned. Returning ('stun')") # memoを返さないように変更
 
-            return "stun", {} # スタン時も2つの値を返す
+            return "stun" # スタン時はactionのみ返す
 
         robot.start_turn()
         if action == "rest":
@@ -123,8 +124,8 @@ class GameController:
             print(f"Invalid action: {action}")
             raise ValueError("Unexpected robot action detected!")
 
-        print(f"DEBUG: Returning action: {action} (type: {type(action)}), memo: {memo} (type: {type(memo)})")
-        return action, memo
+        print(f"DEBUG: Returning action: {action} (type: {type(action)})") # memoを削除
+        return action # actionのみを返すように変更
 
     def save_game_state(self, robot_name, action):
         # 現在のターンのゲーム状態を辞書形式で記録
@@ -157,7 +158,7 @@ class GameController:
         while self.robot1.is_alive() and self.robot2.is_alive() and self.turn < self.max_turn:
             current_robot = self.robot1 if self.turn % 2 != 0 else self.robot2 # Robot1 (A) が先攻になるように変更
             self.log_action(self.turn, f"\n--- Turn {self.turn} : {current_robot.name} turn ---")
-            action, _ = self.run_logic(current_robot)
+            action = self.run_logic(current_robot) # _ を削除
             self.save_game_state(current_robot.name, action)  # 各ターンごとの状態を保存
             self.log_action(self.turn, f" - {self.robot1.name} : HP: {self.robot1.hp}, SP: {self.robot1.sp}")
             self.log_action(self.turn, f" - {self.robot2.name} : HP: {self.robot2.hp}, SP: {self.robot2.sp}")
@@ -204,8 +205,8 @@ class GameController:
 
         # 1) ターンとメモをクリア
         self.turn   = 0
-        self.memos1 = {}
-        self.memos2 = {}
+        self.memos1 = [] # dictからlistに戻す
+        self.memos2 = [] # dictからlistに戻す
 
         # 2) ロボットを初期位置・初期ステータスに戻す
         for robot, init_pos in (
