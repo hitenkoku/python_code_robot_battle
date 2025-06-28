@@ -77,24 +77,23 @@ class GameController:
 
         if isinstance(response, str):
             action = response
-            memo = {}
         elif isinstance(response, (list, tuple)) and len(response) == 2:
-            action, memo = response
-            assert is_valid_memo(memo)
+            assert is_valid_memo(response[1])
         else:
             assert False, f"Unexpected response format from robot_logic: {response} (type: {type(response)})"
 
-        action = adjust_action(action)
+        action = adjust_action(response[0] if isinstance(response, (list, tuple)) else response)
 
-        if robot == self.robot1:
-            self.memos1.update(memo)
-        else:
-            self.memos2.update(memo)
+        if isinstance(response, (list, tuple)) and len(response) == 2:
+            if robot == self.robot1:
+                self.memos1.append(response[1])
+            else:
+                self.memos2.append(response[1])
 
         if robot.stun_counter > 0:
-            print(f"DEBUG: Stunned. Returning ('stun', {{}})")
+            print(f"DEBUG: Stunned. Returning ('stun')")
 
-            return "stun", {} # スタン時も2つの値を返す
+            return "stun"
 
         robot.start_turn()
         if action == "rest":
@@ -123,8 +122,8 @@ class GameController:
             print(f"Invalid action: {action}")
             raise ValueError("Unexpected robot action detected!")
 
-        print(f"DEBUG: Returning action: {action} (type: {type(action)}), memo: {memo} (type: {type(memo)})")
-        return action, memo
+        print(f"DEBUG: Returning action: {action} (type: {type(action)})")
+        return action
 
     def save_game_state(self, robot_name, action):
         # 現在のターンのゲーム状態を辞書形式で記録
@@ -157,7 +156,7 @@ class GameController:
         while self.robot1.is_alive() and self.robot2.is_alive() and self.turn < self.max_turn:
             current_robot = self.robot1 if self.turn % 2 != 0 else self.robot2 # Robot1 (A) が先攻になるように変更
             self.log_action(self.turn, f"\n--- Turn {self.turn} : {current_robot.name} turn ---")
-            action, _ = self.run_logic(current_robot)
+            action = self.run_logic(current_robot)
             self.save_game_state(current_robot.name, action)  # 各ターンごとの状態を保存
             self.log_action(self.turn, f" - {self.robot1.name} : HP: {self.robot1.hp}, SP: {self.robot1.sp}")
             self.log_action(self.turn, f" - {self.robot2.name} : HP: {self.robot2.hp}, SP: {self.robot2.sp}")
@@ -204,8 +203,8 @@ class GameController:
 
         # 1) ターンとメモをクリア
         self.turn   = 0
-        self.memos1 = {}
-        self.memos2 = {}
+        self.memos1 = []
+        self.memos2 = []
 
         # 2) ロボットを初期位置・初期ステータスに戻す
         for robot, init_pos in (
