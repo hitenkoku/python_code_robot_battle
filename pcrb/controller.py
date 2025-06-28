@@ -8,8 +8,8 @@ class GameController:
             self, max_turn=100, x_max=9, y_max=7, robot1_initial_position=None, robot2_initial_position=None):
         self.robot1 = None
         self.robot2 = None
-        self.memos1 = {}
-        self.memos2 = {}
+        self.memos1 = []
+        self.memos2 = []
         self.turn = 0
         self.max_turn = max_turn
         self.x_max = x_max
@@ -30,8 +30,8 @@ class GameController:
     def set_robots(self, robot1, robot2):
         self.robot1 = robot1
         self.robot2 = robot2
-        self.memos1 = {}
-        self.memos2 = {}
+        self.memos1 = []
+        self.memos2 = []
         self.save_game_state(None, None)
         self.turn += 1
 
