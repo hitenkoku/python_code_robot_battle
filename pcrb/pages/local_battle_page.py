@@ -92,50 +92,43 @@ def main():
             robot1_name = "Robot Alpha"
             robot2_name = "Robot Beta"
 
+            # Initialize progress bar
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+
             for i in range(battle_rounds):
-                st.write(f"--- Round {i+1} ---")
+                status_text.text(f"Running Round {i+1}/{battle_rounds}...")
                 # play_gameのRobot Aがrobot1_logic、Robot Bがrobot2_logicに対応
                 winner, game_state = play_game(robot1_logic, robot2_logic)
 
-                round_winner_display_name = "" # For per-round text display ("Robot Alpha" or "Robot Beta")
                 round_winner_for_df = "" # For DataFrame ("Robot1" or "Robot2")
 
                 if winner.name == "Robot A": # play_game内部のRobot Aは、このページではrobot1_logic (Robot Alpha) に対応
-                    round_winner_display_name = robot1_name # "Robot Alpha"
                     round_winner_for_df = "Robot1"
                     st.session_state.robot1_wins += 1
                 elif winner.name == "Robot B": # play_game内部のRobot Bは、このページではrobot2_logic (Robot Beta) に対応
-                    round_winner_display_name = robot2_name # "Robot Beta"
                     round_winner_for_df = "Robot2"
                     st.session_state.robot2_wins += 1
                 else:
                     # 現状のplay_gameの実装では、必ずRobot AかRobot Bのインスタンスがwinnerとして返されるため、
                     # このelseブロックには到達しない想定。
-                    # 純粋な引き分け（例：両者HPが同じでターン上限）を区別したい場合は、play_game側の改修が必要。
-                    round_winner_display_name = "Draw"
                     round_winner_for_df = "Draw"
                     st.session_state.draws += 1
 
-                result_str, color = determine_battle_result(round_winner_display_name, robot1_name, robot2_name) # Use display name for this function
-                st.markdown(f"Round {i+1} Winner: <span style='color:{color}; font-weight:bold;'>{round_winner_display_name} ({result_str})</span>", unsafe_allow_html=True)
-
-                # ゲームログのダウンロードボタン
-                json_bytes = json.dumps(game_state, ensure_ascii=False, indent=4).encode("utf-8")
-                st.download_button(
-                    label=f"Download Round {i+1} Log",
-                    data=json_bytes,
-                    file_name=f"local_battle_round_{i+1}_log.json",
-                    mime="application/json",
-                    key=f"download_btn_{i}" # 各ボタンにユニークなキーを設定
-                )
+                # NOTE: Individual round winner text and download button are removed as per user request.
+                # result_str, color = determine_battle_result(round_winner_display_name, robot1_name, robot2_name)
+                # st.markdown(f"Round {i+1} Winner: <span style='color:{color}; font-weight:bold;'>{round_winner_display_name} ({result_str})</span>", unsafe_allow_html=True)
+                # json_bytes = json.dumps(game_state, ensure_ascii=False, indent=4).encode("utf-8")
+                # st.download_button(...)
 
                 st.session_state.local_battle_results.append({
                     "Round": i + 1,
-                    "Winner": round_winner_for_df, # Store "Robot1" or "Robot2" for the DataFrame
-                    # "Robot1_Alias": robot1_name, # Not needed for display as per new request
-                    # "Robot2_Alias": robot2_name, # Not needed for display as per new request
+                    "Winner": round_winner_for_df,
+                    "game_state": game_state # Store game_state for later download
                 })
+                progress_bar.progress((i + 1) / battle_rounds)
 
+            status_text.text("All rounds complete!")
             st.write("--- Battle Summary ---")
             st.markdown(f"**{robot1_name} Wins:** {st.session_state.robot1_wins}")
             st.markdown(f"**{robot2_name} Wins:** {st.session_state.robot2_wins}")
@@ -145,8 +138,25 @@ def main():
     # --- 対戦結果の詳細表示 ---
     if 'local_battle_results' in st.session_state and st.session_state.local_battle_results:
         st.subheader("📊 Detailed Battle Results")
-        results_df = pd.DataFrame(st.session_state.local_battle_results)
-        st.dataframe(results_df[["Round", "Winner"]]) # Display only Round and Winner columns
+
+        # Prepare data for DataFrame, including download links
+        display_data = []
+        for res in st.session_state.local_battle_results:
+            game_state_json = json.dumps(res["game_state"], ensure_ascii=False, indent=4)
+            b64 = base64.b64encode(game_state_json.encode()).decode()
+            log_filename = f"local_battle_round_{res['Round']}_log.json"
+            # Use st.markdown for HTML link as st.download_button is tricky in a loop for DataFrame
+            download_link = f'<a href="data:application/json;base64,{b64}" download="{log_filename}">Download Log</a>'
+
+            display_data.append({
+                "Round": res["Round"],
+                "Winner": res["Winner"],
+                "Log": download_link
+            })
+
+        results_df = pd.DataFrame(display_data)
+        # Use st.markdown to render DataFrame with HTML links
+        st.markdown(results_df[["Round", "Winner", "Log"]].to_html(escape=False, index=False), unsafe_allow_html=True)
 
 
 if __name__ == "__main__":
