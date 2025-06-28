@@ -21,8 +21,8 @@ def upload_and_display_file():
     uploaded_file = st.file_uploader("ロジックファイルをアップロードしてください", type=["py"])
     if uploaded_file:
         file_content = uploaded_file.read().decode("utf-8")
-        st.subheader("Uploaded Code")
-        st.code(file_content, language="python")
+        with st.expander("アップロードされたコードを表示/非表示", expanded=False):
+            st.code(file_content, language="python")
         return file_content
     return None
 
