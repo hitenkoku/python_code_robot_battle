@@ -97,22 +97,27 @@ def main():
                 # play_gameのRobot Aがrobot1_logic、Robot Bがrobot2_logicに対応
                 winner, game_state = play_game(robot1_logic, robot2_logic)
 
-                actual_winner_name = ""
+                round_winner_display_name = "" # For per-round text display ("Robot Alpha" or "Robot Beta")
+                round_winner_for_df = "" # For DataFrame ("Robot1" or "Robot2")
+
                 if winner.name == "Robot A": # play_game内部のRobot Aは、このページではrobot1_logic (Robot Alpha) に対応
-                    actual_winner_name = robot1_name
+                    round_winner_display_name = robot1_name # "Robot Alpha"
+                    round_winner_for_df = "Robot1"
                     st.session_state.robot1_wins += 1
                 elif winner.name == "Robot B": # play_game内部のRobot Bは、このページではrobot2_logic (Robot Beta) に対応
-                    actual_winner_name = robot2_name
+                    round_winner_display_name = robot2_name # "Robot Beta"
+                    round_winner_for_df = "Robot2"
                     st.session_state.robot2_wins += 1
                 else:
                     # 現状のplay_gameの実装では、必ずRobot AかRobot Bのインスタンスがwinnerとして返されるため、
                     # このelseブロックには到達しない想定。
                     # 純粋な引き分け（例：両者HPが同じでターン上限）を区別したい場合は、play_game側の改修が必要。
-                    actual_winner_name = "Draw" # 念のため"Draw"として記録
+                    round_winner_display_name = "Draw"
+                    round_winner_for_df = "Draw"
                     st.session_state.draws += 1
 
-                result_str, color = determine_battle_result(actual_winner_name, robot1_name, robot2_name)
-                st.markdown(f"Round {i+1} Winner: <span style='color:{color}; font-weight:bold;'>{actual_winner_name} ({result_str})</span>", unsafe_allow_html=True)
+                result_str, color = determine_battle_result(round_winner_display_name, robot1_name, robot2_name) # Use display name for this function
+                st.markdown(f"Round {i+1} Winner: <span style='color:{color}; font-weight:bold;'>{round_winner_display_name} ({result_str})</span>", unsafe_allow_html=True)
 
                 # ゲームログのダウンロードボタン
                 json_bytes = json.dumps(game_state, ensure_ascii=False, indent=4).encode("utf-8")
@@ -126,10 +131,9 @@ def main():
 
                 st.session_state.local_battle_results.append({
                     "Round": i + 1,
-                    "Winner": actual_winner_name,
-                    "Robot1": robot1_name,
-                    "Robot2": robot2_name,
-                    # "game_state": game_state # DataFrameに含めると重いのでコメントアウト
+                    "Winner": round_winner_for_df, # Store "Robot1" or "Robot2" for the DataFrame
+                    # "Robot1_Alias": robot1_name, # Not needed for display as per new request
+                    # "Robot2_Alias": robot2_name, # Not needed for display as per new request
                 })
 
             st.write("--- Battle Summary ---")
@@ -142,7 +146,7 @@ def main():
     if 'local_battle_results' in st.session_state and st.session_state.local_battle_results:
         st.subheader("📊 Detailed Battle Results")
         results_df = pd.DataFrame(st.session_state.local_battle_results)
-        st.dataframe(results_df[["Round", "Winner", "Robot1", "Robot2"]])
+        st.dataframe(results_df[["Round", "Winner"]]) # Display only Round and Winner columns
 
 
 if __name__ == "__main__":
