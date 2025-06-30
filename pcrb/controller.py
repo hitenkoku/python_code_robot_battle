@@ -85,7 +85,8 @@ class GameController:
         action = adjust_action(action)
 
         if robot == self.robot1:
-            self.memos1.append(memo)        else:
+            self.memos1.append(memo)
+        else:
             self.memos2.append(memo)
 
         if robot.stun_counter > 0:
