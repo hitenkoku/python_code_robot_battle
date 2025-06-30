@@ -77,6 +77,7 @@ class GameController:
 
         if isinstance(response, str):
             action = response
+            memo = {}
         elif isinstance(response, (list, tuple)) and len(response) == 2:
             action, memo = response
         else:
